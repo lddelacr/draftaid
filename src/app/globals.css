@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Semantic tokens, light first.
+ *
+ * The guide spends colour on meaning — green target, amber pass, red avoid —
+ * so the interface itself stays neutral and lets those read. One accent is
+ * reserved for turn state, because "you are on the clock" is the only
+ * interface fact urgent enough to outrank the data.
+ */
+@layer base {
+  :root {
+    --bg: 246 247 249;
+    --panel: 255 255 255;
+    --sunken: 241 243 246;
+    --line: 226 230 236;
+    --line-strong: 209 214 223;
+    --text: 20 24 31;
+    --muted: 91 100 114;
+    --dim: 139 149 165;
+    --accent: 37 99 235;
+    --accent-ink: 255 255 255;
+
+    --target: 21 128 61;
+    --pass: 161 122 0;
+    --avoid: 190 39 30;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg: 12 14 19;
+    --panel: 17 20 27;
+    --sunken: 23 27 36;
+    --line: 35 40 52;
+    --line-strong: 51 58 73;
+    --text: 230 233 239;
+    --muted: 152 161 179;
+    --dim: 107 118 137;
+    --accent: 91 140 255;
+    --accent-ink: 8 9 12;
+
+    --target: 52 199 89;
+    --pass: 224 190 0;
+    --avoid: 235 78 66;
+
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    @apply bg-surface text-body;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Ranks, byes and pick numbers are read as columns of figures and must not
+     reflow as digits change. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    @apply font-mono;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/70 ring-offset-2 ring-offset-surface;
+  }
+
+  ::-webkit-scrollbar {
+    @apply h-1.5 w-1.5;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-line-strong;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
