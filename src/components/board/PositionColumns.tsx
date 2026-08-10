@@ -33,7 +33,7 @@ const LABEL: Record<Position, string> = {
  * in white space instead. Anyone past the slice is a search away on the left,
  * and the header count says how many that is.
  */
-const DEPTH = 14;
+const DEPTH = 20;
 
 export function PositionColumns({
   players,
@@ -76,7 +76,7 @@ export function PositionColumns({
                         // signal on the page, so they stay visible.
                         <div className="flex items-center gap-1.5 px-2 py-0.5">
                           <span className="h-px flex-1 bg-line" />
-                          <span className="tnum text-2xs text-dim/70">{tier}</span>
+                          <span className="tnum text-2xs text-dim">Tier {tier}</span>
                         </div>
                       )}
                       <PlayerRow
