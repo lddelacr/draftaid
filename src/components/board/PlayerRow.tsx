@@ -87,7 +87,9 @@ function PlayerRowImpl({
             />
           )}
           <span className="truncate text-sm text-body">{player.name}</span>
-          {signals?.map((signal) => <StackChip key={signal.kind} signal={signal} />)}
+          {signals?.map((signal) => (
+            <StackChip key={signal.kind} signal={signal} showName={!full} />
+          ))}
           {slide !== undefined && slide > 0 && (
             <span
               title={`Still available ${slide} picks past your rank`}

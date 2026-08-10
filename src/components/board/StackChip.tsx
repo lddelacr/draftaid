@@ -10,6 +10,11 @@ import { type StackSignal, shortName } from "@/lib/draft/stacks";
  * Negative ones are shown by tinting the team column instead — a red chip
  * carrying a name said the same thing but competed with the player's own name
  * for the row, and the club is the thing the warning is actually about.
+ *
+ * The partner's name only appears where there is room for it. On the overall
+ * board — which already carries rank, team and bye — it pushed the player's own
+ * name out of the row, so there the chip is a bare glyph and the name lives in
+ * the tooltip.
  */
 const CHIP = {
   stack: {
@@ -24,7 +29,13 @@ const CHIP = {
   },
 } as const;
 
-export function StackChip({ signal }: { signal: StackSignal }) {
+export function StackChip({
+  signal,
+  showName = false,
+}: {
+  signal: StackSignal;
+  showName?: boolean;
+}) {
   if (signal.kind === "conflict") return null;
 
   const { Icon, explain } = CHIP[signal.kind];
@@ -33,11 +44,19 @@ export function StackChip({ signal }: { signal: StackSignal }) {
   return (
     <span
       title={explain(names)}
-      className="flex shrink-0 items-center gap-0.5 rounded bg-target/10 px-1 py-px text-2xs text-target"
+      aria-label={explain(names)}
+      className={cn(
+        "flex shrink-0 items-center rounded bg-target/10 text-target",
+        showName ? "gap-0.5 px-1 py-px text-2xs" : "size-4 justify-center",
+      )}
     >
       <Icon className="size-2.5" />
-      {shortName(signal.partners[0]?.name ?? "")}
-      {signal.partners.length > 1 && `+${signal.partners.length - 1}`}
+      {showName && (
+        <>
+          {shortName(signal.partners[0]?.name ?? "")}
+          {signal.partners.length > 1 && `+${signal.partners.length - 1}`}
+        </>
+      )}
     </span>
   );
 }

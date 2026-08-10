@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Minus, Plus, X } from "lucide-react";
-import type { DraftState, LineupSlots, Player, PlayerId, Position } from "@/types";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { type DraftState, type LineupSlots, type Player, type PlayerId, type Position, teamSlot } from "@/types";
 import { cn } from "@/lib/utils";
-import { myRoster } from "@/lib/draft/selectors";
+import { rosters } from "@/lib/draft/selectors";
 import { fillLineup } from "@/lib/scoring/lineup";
 import { POSITION_STYLES } from "@/lib/presentation";
 import { Panel, PanelBody, PanelHeader } from "@/components/layout/Panel";
@@ -20,8 +20,12 @@ const EDITABLE: { key: keyof LineupSlots; label: string }[] = [
 ];
 
 /**
- * My team as a lineup card rather than a pick list. Empty slots are the point:
- * "what am I still missing" should be readable at a glance, not counted.
+ * A lineup card rather than a pick list. Empty slots are the point: "what am I
+ * still missing" should be readable at a glance, not counted.
+ *
+ * The seat arrows walk the same card across every team in the league, which
+ * doubles as the scouting view — seeing that the seat picking ahead of you has
+ * two backs and no receivers is worth more than a roster dump.
  */
 export function LineupCard({
   state,
@@ -32,8 +36,30 @@ export function LineupCard({
   players: readonly Player[];
   onLineup: (lineup: LineupSlots) => void;
 }) {
-  const roster = myRoster(state, players);
+  const [viewSlot, setViewSlot] = useState<number>(state.settings.mySlot);
+  const { teamCount, mySlot, format } = state.settings;
+
+  // Follow the user's seat if they change it in the header.
+  const slot = Math.min(viewSlot, teamCount);
+  const mine = slot === mySlot;
+
+  const roster = rosters(state, players).get(teamSlot(slot)) ?? [];
   const { starters, bench } = fillLineup(roster, state.settings.lineup);
+
+  /** Pick number each player went at, for the value column. */
+  const pickOf = new Map(state.picks.map((pick) => [pick.playerId, pick.pick]));
+  const deltaOf = (player: Player): number | null => {
+    const rank = player.ranks[format]?.overall;
+    const pick = pickOf.get(player.id);
+    return rank === undefined || pick === undefined ? null : pick - rank;
+  };
+  const net = roster.reduce(
+    (total: number, player: Player) => total + (deltaOf(player) ?? 0),
+    0,
+  );
+
+  const step = (direction: number) =>
+    setViewSlot(((slot - 1 + direction + teamCount) % teamCount) + 1);
 
   const byeCounts = new Map<number, number>();
   for (const slot of starters) {
@@ -50,12 +76,39 @@ export function LineupCard({
 
   return (
     <Panel className="shrink-0">
-      <PanelHeader title="My team" count={roster.length} />
+      <PanelHeader title={mine ? "My team" : `Seat ${slot}`} count={roster.length}>
+        <span
+          title="Net picks past rank across this roster — positive is value, negative is reaching"
+          className={cn(
+            "tnum rounded px-1 text-2xs",
+            net > 0 ? "text-target" : net < 0 ? "text-avoid" : "text-dim",
+          )}
+        >
+          {net > 0 ? `+${net}` : net}
+        </span>
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Previous team"
+          className="rounded p-0.5 text-dim hover:bg-sunken hover:text-body"
+        >
+          <ChevronLeft className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Next team"
+          className="rounded p-0.5 text-dim hover:bg-sunken hover:text-body"
+        >
+          <ChevronRight className="size-3.5" />
+        </button>
+      </PanelHeader>
 
       <div className="flex items-center gap-2 border-b border-line px-2.5 py-1 text-2xs uppercase tracking-wide text-dim">
         <span className="w-11">Slot</span>
         <span className="flex-1">Player</span>
-        <span>Team</span>
+        <span className="w-8 text-right">vs rk</span>
+        <span className="w-7 text-right">Team</span>
         <span className="w-6 text-right">Bye</span>
       </div>
 
@@ -89,7 +142,10 @@ export function LineupCard({
                   <span className="min-w-0 flex-1 truncate text-sm text-body">
                     {slot.player.name}
                   </span>
-                  <span className="tnum text-2xs text-muted">{slot.player.team ?? "—"}</span>
+                  <Delta value={deltaOf(slot.player)} />
+                  <span className="tnum w-7 text-right text-2xs text-muted">
+                    {slot.player.team ?? "—"}
+                  </span>
                   <span
                     title={clash ? "Three or more starters share this bye" : undefined}
                     className={cn("tnum w-6 text-right text-2xs", clash ? "text-pass" : "text-dim")}
@@ -120,6 +176,10 @@ export function LineupCard({
                   {player.position}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-muted">{player.name}</span>
+                <Delta value={deltaOf(player)} />
+                <span className="tnum w-7 text-right text-2xs text-muted">
+                  {player.team ?? "—"}
+                </span>
                 <span className="tnum w-6 text-right text-2xs text-dim">
                   {player.byeWeek ?? "—"}
                 </span>
@@ -129,6 +189,7 @@ export function LineupCard({
         )}
       </div>
 
+      {mine && (
       <details className="border-t border-line">
         <summary className="cursor-pointer px-2.5 py-1.5 text-2xs uppercase tracking-wide text-dim hover:text-body">
           Roster slots
@@ -150,7 +211,22 @@ export function LineupCard({
           ))}
         </div>
       </details>
+      )}
     </Panel>
+  );
+}
+
+/** Picks past rank: positive lasted, negative was a reach. */
+function Delta({ value }: { value: number | null }) {
+  return (
+    <span
+      className={cn(
+        "tnum w-8 shrink-0 text-right text-2xs",
+        value === null ? "text-dim" : value > 0 ? "text-target" : value < 0 ? "text-avoid" : "text-dim",
+      )}
+    >
+      {value === null ? "—" : value > 0 ? `+${value}` : value}
+    </span>
   );
 }
 

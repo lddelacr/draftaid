@@ -63,6 +63,15 @@ The app is entirely client-side, so it can ship either way:
   dropped on any static host, including GitHub Pages. Set `basePath` if it
   lives in a subdirectory rather than at the domain root.
 
+## My team
+
+Arrows in the card header walk the same lineup view across every seat in the
+league, so scouting the team picking ahead of you uses the same layout as your
+own. Each player carries a `vs rk` figure — picks past the guide's rank, so
+positive means value — and the header totals it for the roster.
+
+Roster slot editing only appears on your own team.
+
 ## Correcting a draft
 
 Clicking any row in the Drafted list removes that pick and renumbers everything
