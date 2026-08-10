@@ -1,14 +1,14 @@
 "use client";
 
 import { memo } from "react";
-import { Star } from "lucide-react";
+import { Ban, Star } from "lucide-react";
 import type { Player, ScoringFormat } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   POSITION_STYLES,
   SENTIMENT_DOT,
   SENTIMENT_LABEL,
-  SENTIMENT_ROW,
+  SENTIMENT_TAG,
   SENTIMENT_WORD,
 } from "@/lib/presentation";
 import type { StackSignal } from "@/lib/draft/stacks";
@@ -59,7 +59,6 @@ function PlayerRowImpl({
           "flex w-full items-center gap-2 rounded-md px-2 text-left transition-colors",
           "hover:bg-sunken focus-visible:bg-sunken",
           full ? "py-1.5" : "py-1",
-          !full && marked && SENTIMENT_ROW[player.sentiment],
         )}
       >
         {full && (
@@ -87,9 +86,7 @@ function PlayerRowImpl({
               className={cn("size-1.5 shrink-0 rounded-full", SENTIMENT_DOT[player.sentiment])}
             />
           )}
-          <span className={cn("truncate text-sm", !full && marked ? "" : "text-body")}>
-            {player.name}
-          </span>
+          <span className="truncate text-sm text-body">{player.name}</span>
           {signals?.map((signal) => <StackChip key={signal.kind} signal={signal} />)}
           {slide !== undefined && slide > 0 && (
             <span
@@ -102,7 +99,12 @@ function PlayerRowImpl({
         </span>
 
         {!full && marked && (
-          <span className="shrink-0 text-2xs uppercase tracking-wide opacity-80">
+          <span
+            className={cn(
+              "shrink-0 rounded px-1 py-px text-2xs font-medium",
+              SENTIMENT_TAG[player.sentiment],
+            )}
+          >
             {SENTIMENT_WORD[player.sentiment]}
           </span>
         )}
@@ -114,10 +116,11 @@ function PlayerRowImpl({
               : undefined
           }
           className={cn(
-            "tnum shrink-0 rounded px-1 text-2xs",
+            "tnum flex shrink-0 items-center gap-0.5 rounded px-1 text-2xs",
             conflict ? "bg-avoid/15 font-medium text-avoid" : "text-muted",
           )}
         >
+          {conflict && <Ban className="size-2.5 shrink-0" />}
           {player.team ?? "—"}
         </span>
 

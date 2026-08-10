@@ -43,11 +43,15 @@ export const TEAM_SOURCE_NOTE: Record<TeamSource, string | null> = {
   unknown: "Club unknown",
 };
 
-/** Row treatment for the position columns, where the word replaces the dot. */
-export const SENTIMENT_ROW: Record<Sentiment, string> = {
-  target: "bg-target/[0.07] text-target",
-  pass: "bg-pass/[0.07] text-pass",
-  avoid: "bg-avoid/[0.07] text-avoid",
+/**
+ * Tag treatment for the position columns. The colour sits on the tag alone —
+ * washing the whole row put three competing tints on screen at once and made
+ * the columns harder to scan, not easier.
+ */
+export const SENTIMENT_TAG: Record<Sentiment, string> = {
+  target: "bg-target/10 text-target",
+  pass: "bg-pass/15 text-pass",
+  avoid: "bg-avoid/10 text-avoid",
   neutral: "",
 };
 
