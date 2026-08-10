@@ -1,36 +1,48 @@
 "use client";
 
-import { Ban, Link2, Shield } from "lucide-react";
+import { Link2, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type StackSignal, shortName } from "@/lib/draft/stacks";
 
 /**
- * Stack chips carry an icon as well as a colour.
+ * Only positive correlations get a chip.
  *
- * The guide already owns green and red for target and avoid, and those marks
- * sit on the same row, so the icon is what actually separates the two systems:
- * a link pairs, a shield insures, a bar overlaps. Colour is the secondary cue.
- * Stacks and handcuffs share the green rather than taking a third hue, because
- * they say the same thing — this pick works with what you already hold.
+ * Negative ones are shown by tinting the team column instead — a red chip
+ * carrying a name said the same thing but competed with the player's own name
+ * for the row, and the club is the thing the warning is actually about.
  */
 const CHIP = {
-  stack: { Icon: Link2, tone: "bg-target/10 text-target", verb: "Stacks with" },
-  handcuff: { Icon: Shield, tone: "bg-target/10 text-target", verb: "Handcuffs" },
-  conflict: { Icon: Ban, tone: "bg-avoid/10 text-avoid", verb: "Overlaps with" },
+  stack: {
+    Icon: Link2,
+    explain: (names: string) =>
+      `Positive correlation — every touchdown they combine on scores twice for you. Stacks with ${names} on your roster.`,
+  },
+  handcuff: {
+    Icon: Shield,
+    explain: (names: string) =>
+      `Positive correlation — handcuffing your own back keeps the touches on your roster whichever way the split breaks, and an injury promotes your player. Pairs with ${names}.`,
+  },
 } as const;
 
 export function StackChip({ signal }: { signal: StackSignal }) {
-  const { Icon, tone, verb } = CHIP[signal.kind];
+  if (signal.kind === "conflict") return null;
+
+  const { Icon, explain } = CHIP[signal.kind];
   const names = signal.partners.map((partner) => partner.name).join(", ");
 
   return (
     <span
-      title={`${verb} ${names} on your roster`}
-      className={cn("flex shrink-0 items-center gap-0.5 rounded px-1 py-px text-2xs", tone)}
+      title={explain(names)}
+      className="flex shrink-0 items-center gap-0.5 rounded bg-target/10 px-1 py-px text-2xs text-target"
     >
       <Icon className="size-2.5" />
       {shortName(signal.partners[0]?.name ?? "")}
       {signal.partners.length > 1 && `+${signal.partners.length - 1}`}
     </span>
   );
+}
+
+/** Wording for the tinted team cell when a pick overlaps your roster. */
+export function conflictTitle(names: string, team: string): string {
+  return `Negative correlation — you already have ${names} on ${team}, and they compete with this pick for the same production.`;
 }

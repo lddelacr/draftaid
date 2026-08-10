@@ -76,13 +76,18 @@ click again for the worst reaches. Click `Pick` to go back to draft order.
 
 Once you own a player, everyone from that club is annotated on both lists:
 
-- **Link icon, green** — stacks with someone you hold. QB with WR or TE, either
+- **Link chip, green** — stacks with someone you hold. QB with WR or TE, either
   direction.
-- **Shield icon, green** — handcuffs someone you hold. Two backs on one offence
+- **Shield chip, green** — handcuffs someone you hold. Two backs on one offence
   split the same carries, and owning both means the touches land on your roster
   whichever way the job breaks.
-- **Bar icon, red** — overlaps with someone you hold. Any two pass catchers on
-  one offence, and a back against a QB or pass catcher on that offence.
+- **Team code tinted red** — overlaps with someone you hold. Any two pass
+  catchers on one offence, and a back against a QB or pass catcher on that
+  offence. Hovering the club says who and why.
+
+Negative correlation deliberately has no chip: a red badge carrying a name
+competed with the player's own name for the row, and the club is what the
+warning is actually about. All three states explain themselves on hover.
 
 Both can appear at once: taking Shakir while holding Allen and Cook is a stack
 and an overlap in the same row. Colour is the secondary cue — the icons carry

@@ -42,3 +42,18 @@ export const TEAM_SOURCE_NOTE: Record<TeamSource, string | null> = {
   prior: "Club carried from 2025 — not verified for 2026",
   unknown: "Club unknown",
 };
+
+/** Row treatment for the position columns, where the word replaces the dot. */
+export const SENTIMENT_ROW: Record<Sentiment, string> = {
+  target: "bg-target/[0.07] text-target",
+  pass: "bg-pass/[0.07] text-pass",
+  avoid: "bg-avoid/[0.07] text-avoid",
+  neutral: "",
+};
+
+export const SENTIMENT_WORD: Record<Sentiment, string> = {
+  target: "Target",
+  pass: "Pass",
+  avoid: "Avoid",
+  neutral: "",
+};

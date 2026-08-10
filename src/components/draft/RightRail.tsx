@@ -52,7 +52,14 @@ export function LineupCard({
     <Panel className="shrink-0">
       <PanelHeader title="My team" count={roster.length} />
 
-      <div className="space-y-px px-1 pb-1">
+      <div className="flex items-center gap-2 border-b border-line px-2.5 py-1 text-2xs uppercase tracking-wide text-dim">
+        <span className="w-11">Slot</span>
+        <span className="flex-1">Player</span>
+        <span>Team</span>
+        <span className="w-6 text-right">Bye</span>
+      </div>
+
+      <div className="space-y-px px-1 pb-1 pt-1">
         {starters.map((slot) => {
           const clash = slot.player?.byeWeek
             ? (byeCounts.get(slot.player.byeWeek) ?? 0) >= 3
