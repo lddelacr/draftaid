@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Star } from "lucide-react";
 import type { Player, ScoringFormat } from "@/types";
 import { cn } from "@/lib/utils";
-import { POSITION_STYLES, SENTIMENT_DOT, SENTIMENT_LABEL, TEAM_SOURCE_NOTE } from "@/lib/presentation";
+import { POSITION_STYLES, SENTIMENT_DOT, SENTIMENT_LABEL } from "@/lib/presentation";
 import type { StackSignal } from "@/lib/draft/stacks";
 import { StackChip } from "./StackChip";
 
@@ -33,7 +33,6 @@ function PlayerRowImpl({
   onFavorite,
 }: PlayerRowProps) {
   const rank = player.ranks[format];
-  const unverified = TEAM_SOURCE_NOTE[player.teamSource];
   const full = variant === "full";
 
   return (
@@ -85,15 +84,7 @@ function PlayerRowImpl({
           )}
         </span>
 
-        <span
-          title={unverified ?? undefined}
-          className={cn(
-            "tnum shrink-0 text-2xs",
-            unverified ? "text-dim underline decoration-dotted" : "text-muted",
-          )}
-        >
-          {player.team ?? "—"}
-        </span>
+        <span className="tnum shrink-0 text-2xs text-muted">{player.team ?? "—"}</span>
 
         {full && (
           <span className="tnum w-6 shrink-0 text-right text-2xs text-dim">

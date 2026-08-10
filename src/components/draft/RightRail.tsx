@@ -1,7 +1,8 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
-import type { DraftState, LineupSlots, Player, Position } from "@/types";
+import { useState } from "react";
+import { ArrowDown, ArrowUp, Minus, Plus, X } from "lucide-react";
+import type { DraftState, LineupSlots, Player, PlayerId, Position } from "@/types";
 import { cn } from "@/lib/utils";
 import { myRoster } from "@/lib/draft/selectors";
 import { fillLineup } from "@/lib/scoring/lineup";
@@ -168,29 +169,74 @@ function Stepper({
   );
 }
 
+type Sort = "order" | "value" | "reach";
+
 /**
- * Drafted players, newest first, each with how far they went against the
- * guide's rank: positive means they lasted past it, negative means a reach.
+ * Drafted players with how far each went against the guide's rank: positive
+ * means they lasted past it, negative means someone reached.
+ *
+ * Clicking a row removes that pick and shifts everyone after it up, which is
+ * the only practical fix once a mis-entered pick is buried ten picks deep —
+ * undo alone would mean unwinding every correct pick on top of it.
  */
 export function DraftHistory({
   state,
   players,
+  onRemove,
 }: {
   state: DraftState;
   players: readonly Player[];
+  onRemove: (playerId: PlayerId) => void;
 }) {
+  const [sort, setSort] = useState<Sort>("order");
   const index = new Map(players.map((player) => [player.id, player]));
   const format = state.settings.format;
+
+  const deltaOf = (pick: (typeof state.picks)[number]): number | null => {
+    const rank = index.get(pick.playerId)?.ranks[format]?.overall;
+    return rank === undefined ? null : pick.pick - rank;
+  };
+
+  const ordered = [...state.picks];
+  if (sort === "order") {
+    ordered.reverse();
+  } else {
+    // Unranked picks have no delta to compare, so they sink to the bottom.
+    const direction = sort === "value" ? -1 : 1;
+    ordered.sort((a, b) => {
+      const left = deltaOf(a);
+      const right = deltaOf(b);
+      if (left === null) return 1;
+      if (right === null) return -1;
+      return (left - right) * direction;
+    });
+  }
 
   return (
     <Panel className="min-h-0 flex-1">
       <PanelHeader title="Drafted" count={state.picks.length} />
       <div className="flex items-center gap-2 border-b border-line px-2 py-1 text-2xs uppercase tracking-wide text-dim">
-        <span className="w-9">Pick</span>
+        <button
+          type="button"
+          onClick={() => setSort("order")}
+          className={cn("w-9 text-left transition-colors hover:text-body", sort === "order" && "text-body")}
+        >
+          Pick
+        </button>
         <span className="flex-1">Player</span>
-        <span title="Picks past your rank — positive is value, negative is a reach">
+        <button
+          type="button"
+          title="Sort by value: best steals first, then click again for the worst reaches"
+          onClick={() => setSort(sort === "value" ? "reach" : "value")}
+          className={cn(
+            "flex items-center gap-0.5 uppercase transition-colors hover:text-body",
+            sort !== "order" && "text-body",
+          )}
+        >
           vs rank
-        </span>
+          {sort === "value" && <ArrowDown className="size-2.5" />}
+          {sort === "reach" && <ArrowUp className="size-2.5" />}
+        </button>
       </div>
 
       <PanelBody>
@@ -198,18 +244,22 @@ export function DraftHistory({
           <p className="px-2 py-6 text-sm text-dim">No picks yet.</p>
         ) : (
           <ul className="space-y-px">
-            {[...state.picks].reverse().map((pick) => {
+            {ordered.map((pick) => {
               const player = index.get(pick.playerId);
               const mine = pick.slot === state.settings.mySlot;
               const inRound = ((pick.pick - 1) % state.settings.teamCount) + 1;
               const rank = player?.ranks[format]?.overall;
-              const delta = rank === undefined ? null : pick.pick - rank;
+              const delta = deltaOf(pick);
 
               return (
-                <li
-                  key={pick.pick}
+                <li key={pick.pick}>
+                <button
+                  type="button"
+                  onClick={() => onRemove(pick.playerId)}
+                  title={`Remove ${player?.name ?? "this pick"} and shift later picks up`}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1",
+                    "group flex w-full items-center gap-2 rounded-md px-2 py-1 text-left",
+                    "hover:bg-avoid/10",
                     mine && "bg-accent/10",
                   )}
                 >
@@ -251,6 +301,8 @@ export function DraftHistory({
                   >
                     {delta === null ? "—" : delta > 0 ? `+${delta}` : delta}
                   </span>
+                  <X className="size-3 shrink-0 text-avoid opacity-0 transition-opacity group-hover:opacity-100" />
+                </button>
                 </li>
               );
             })}

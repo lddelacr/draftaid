@@ -16,6 +16,7 @@ import { roundOf, slotOnClock, totalPicks } from "./snake";
 
 export type DraftAction =
   | { type: "draft"; playerId: PlayerId }
+  | { type: "remove"; playerId: PlayerId }
   | { type: "undo" }
   | { type: "reset" }
   | { type: "settings"; settings: LeagueSettings }
@@ -30,6 +31,23 @@ export function createDraft(settings: LeagueSettings): DraftState {
 
 const toggle = (list: readonly PlayerId[], id: PlayerId): PlayerId[] =>
   list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id];
+
+/**
+ * Re-derives pick number, seat and round from list position. Removing a pick
+ * from the middle shifts everyone after it up a slot, which is exactly right
+ * when you are correcting a pick that never happened.
+ */
+function renumber(picks: readonly Pick[], settings: LeagueSettings): Pick[] {
+  return picks.map((entry, index) => {
+    const pick = pickNumber(index + 1);
+    return {
+      ...entry,
+      pick,
+      slot: slotOnClock(pick, settings.teamCount),
+      round: roundOf(pick, settings.teamCount),
+    };
+  });
+}
 
 function move<T>(list: readonly T[], from: number, to: number): T[] {
   const next = [...list];
@@ -60,6 +78,13 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
         // Drafting a queued player removes them from the shortlist.
         queue: state.queue.filter((id) => id !== action.playerId),
       };
+    }
+
+    case "remove": {
+      const remaining = state.picks.filter((pick) => pick.playerId !== action.playerId);
+      return remaining.length === state.picks.length
+        ? state
+        : { ...state, picks: renumber(remaining, state.settings) };
     }
 
     case "undo":

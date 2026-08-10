@@ -6,13 +6,21 @@ import type { NflTeam, Player, Position } from "@/types";
  * A quarterback and his pass catchers score the same play twice, so pairing
  * them raises your ceiling. A back on that same offence works against it — his
  * best games are the ones where the passing game does least — so the equity
- * overlaps without compounding. This module only reports the relationship; what
- * to do about it stays your call.
+ * overlaps without compounding. Any two pass catchers overlap the same way:
+ * they split one target share, so one eating is the other going hungry.
+ *
+ * Two backs on one offence are the exception. They split carries the same way,
+ * but the split is the point — owning both means the touches land on your
+ * roster whichever way the job breaks, and an injury promotes your own player.
+ * That is a handcuff, and it reads as a positive.
+ *
+ * This module only reports the relationship; what to do about it stays your
+ * call.
  */
 
 const PASS_CATCHERS: readonly Position[] = ["WR", "TE"];
 
-export type StackKind = "stack" | "conflict";
+export type StackKind = "stack" | "handcuff" | "conflict";
 
 export interface StackSignal {
   readonly kind: StackKind;
@@ -46,6 +54,7 @@ export function stackSignals(
   if (mates.length === 0) return [];
 
   const stack: Player[] = [];
+  const handcuff: Player[] = [];
   const conflict: Player[] = [];
 
   for (const mate of mates) {
@@ -55,13 +64,18 @@ export function stackSignals(
     } else if (isPassCatcher(player)) {
       if (mate.position === "QB") stack.push(mate);
       if (mate.position === "RB") conflict.push(mate);
+      // Every pass catcher on an offence competes for the same targets,
+      // whether or not they play the same position.
+      if (isPassCatcher(mate)) conflict.push(mate);
     } else if (player.position === "RB") {
       if (mate.position === "QB" || isPassCatcher(mate)) conflict.push(mate);
+      if (mate.position === "RB") handcuff.push(mate);
     }
   }
 
   const signals: StackSignal[] = [];
   if (stack.length) signals.push({ kind: "stack", partners: stack });
+  if (handcuff.length) signals.push({ kind: "handcuff", partners: handcuff });
   if (conflict.length) signals.push({ kind: "conflict", partners: conflict });
   return signals;
 }

@@ -121,7 +121,7 @@ TEAMS: dict[str, tuple[str, str]] = {
     "Michael Wilson": ("ARI", "prior"), "Chris Godwin Jr.": ("TB", "prior"),
     "DK Metcalf": ("PIT", "prior"), "Josh Downs": ("IND", "prior"),
     "Stefon Diggs": ("WAS", "stated"), "Courtland Sutton": ("DEN", "guide"),
-    "Deebo Samuel Sr.": ("WAS", "prior"), "Quentin Johnston": ("LAC", "prior"),
+    "Deebo Samuel Sr.": ("SF", "stated"), "Quentin Johnston": ("LAC", "prior"),
     "Jordan Addison": ("MIN", "prior"), "Jakobi Meyers": ("JAX", "guide"),
     "Michael Pittman Jr.": ("PIT", "news"), "Jayden Reed": ("GB", "prior"),
     "Romeo Doubs": ("NE", "news"), "Matthew Golden": ("GB", "prior"),

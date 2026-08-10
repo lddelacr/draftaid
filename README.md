@@ -48,14 +48,36 @@ Four players are ranked in only one format (Adonai Mitchell and Tyler Higbee in
 half-PPR, Darnell Washington and Khalil Shakir in PPR). They appear only in the
 format that ranks them.
 
+## Deploying
+
+The app is entirely client-side, so it can ship either way:
+
+- **Vercel** — push the repo, import it, done. No config needed.
+- **Static files** — add `output: "export"` to `next.config.mjs` and run
+  `npm run build`. The whole app lands in `out/` at under 1 MB and can be
+  dropped on any static host, including GitHub Pages. Set `basePath` if it
+  lives in a subdirectory rather than at the domain root.
+
+## Correcting a draft
+
+Clicking any row in the Drafted list removes that pick and renumbers everything
+after it. Undo (`⌘Z`) only unwinds the most recent pick, which is no help once a
+mis-entry is buried; this handles the case where you notice ten picks later.
+
+The `vs rank` column header sorts the list by value — best steals first, then
+click again for the worst reaches. Click `Pick` to go back to draft order.
+
 ## Stacks
 
 Once you own a player, everyone from that club is annotated on both lists:
 
-- **Link icon, green** — pairs with someone you hold. QB with WR or TE, either
+- **Link icon, green** — stacks with someone you hold. QB with WR or TE, either
   direction.
-- **Bar icon, red** — overlaps with someone you hold. A back against a QB or
-  pass catcher on the same offence, either direction.
+- **Shield icon, green** — handcuffs someone you hold. Two backs on one offence
+  split the same carries, and owning both means the touches land on your roster
+  whichever way the job breaks.
+- **Bar icon, red** — overlaps with someone you hold. Any two pass catchers on
+  one offence, and a back against a QB or pass catcher on that offence.
 
 Both can appear at once: taking Shakir while holding Allen and Cook is a stack
 and an overlap in the same row. Colour is the secondary cue — the icons carry

@@ -95,7 +95,11 @@ export function DraftShell() {
 
         <div className="flex min-h-0 flex-col gap-2">
           <LineupCard state={state} players={PLAYERS} onLineup={setLineup} />
-          <DraftHistory state={state} players={PLAYERS} />
+          <DraftHistory
+            state={state}
+            players={PLAYERS}
+            onRemove={(playerId) => actions.raw({ type: "remove", playerId })}
+          />
         </div>
       </div>
 
