@@ -45,12 +45,23 @@ export function PanelHeader({
 
 export function PanelBody({
   className,
+  scroll = true,
   children,
 }: {
   className?: string;
+  /** Off for the position columns, which show a fixed slice instead. */
+  scroll?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("min-h-0 flex-1 overflow-y-auto p-1", className)}>{children}</div>
+    <div
+      className={cn(
+        "min-h-0 flex-1 p-1",
+        scroll ? "overflow-y-auto" : "overflow-hidden",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }

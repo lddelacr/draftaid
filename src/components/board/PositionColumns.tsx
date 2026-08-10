@@ -27,11 +27,14 @@ const LABEL: Record<Position, string> = {
  * home for everyone the guide ranks past the top 150 — they never appear on the
  * overall board because the guide gives them no overall rank.
  *
- * Columns fill the viewport and scroll independently rather than showing a
- * fixed number of players. A fixed count looked ragged because tier dividers
- * are rows too, so a position with more tier breaks ran longer than one with
- * fewer even at identical depth.
+ * Each column shows a fixed slice rather than the whole pool. Grid stretch
+ * equalises the panel heights, so a position carrying more tier breaks no
+ * longer runs longer than one carrying fewer — the shorter columns simply end
+ * in white space instead. Anyone past the slice is a search away on the left,
+ * and the header count says how many that is.
  */
+const DEPTH = 14;
+
 export function PositionColumns({
   players,
   format,
@@ -41,22 +44,24 @@ export function PositionColumns({
   onFavorite,
 }: PositionColumnsProps) {
   return (
-    <div className="grid min-h-0 grid-cols-1 gap-2 sm:h-full sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-h-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {POSITIONS.map((position) => {
-        const pool = players
+        const remaining = players
           .filter((player) => player.position === position && player.ranks[format])
           .sort(
             (a, b) =>
               (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0),
           );
+        // The header keeps the true remaining count; the list shows a slice.
+        const pool = remaining.slice(0, DEPTH);
         return (
           <Panel key={position} className="min-h-0">
             <PanelHeader
               title={LABEL[position]}
-              count={pool.length}
+              count={remaining.length}
               accent={POSITION_ACCENT[position]}
             />
-            <PanelBody>
+            <PanelBody scroll={false}>
               {pool.length === 0 ? (
                 <p className="px-2 py-6 text-center text-2xs text-dim">All gone.</p>
               ) : (
@@ -69,9 +74,9 @@ export function PositionColumns({
                       {newTier && (
                         // The guide draws these breaks itself — the sharpest
                         // signal on the page, so they stay visible.
-                        <div className="flex items-center gap-1.5 px-2 py-1">
-                          <span className="tnum text-2xs text-dim">Tier {tier}</span>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5">
                           <span className="h-px flex-1 bg-line" />
+                          <span className="tnum text-2xs text-dim/70">{tier}</span>
                         </div>
                       )}
                       <PlayerRow
