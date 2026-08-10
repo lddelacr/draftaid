@@ -9,7 +9,6 @@ import { PlayerRow } from "./PlayerRow";
 interface PositionColumnsProps {
   players: readonly Player[];
   format: ScoringFormat;
-  depth?: number;
   favorites: ReadonlySet<string>;
   myTeams: Map<NflTeam, Player[]>;
   onDraft: (player: Player) => void;
@@ -27,18 +26,22 @@ const LABEL: Record<Position, string> = {
  * Best available at each position, in the guide's positional order. This is the
  * home for everyone the guide ranks past the top 150 — they never appear on the
  * overall board because the guide gives them no overall rank.
+ *
+ * Columns fill the viewport and scroll independently rather than showing a
+ * fixed number of players. A fixed count looked ragged because tier dividers
+ * are rows too, so a position with more tier breaks ran longer than one with
+ * fewer even at identical depth.
  */
 export function PositionColumns({
   players,
   format,
-  depth = 20,
   favorites,
   myTeams,
   onDraft,
   onFavorite,
 }: PositionColumnsProps) {
   return (
-    <div className="grid min-h-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-h-0 grid-cols-1 gap-2 sm:h-full sm:grid-cols-2 xl:grid-cols-4">
       {POSITIONS.map((position) => {
         const pool = players
           .filter((player) => player.position === position && player.ranks[format])
@@ -46,8 +49,6 @@ export function PositionColumns({
             (a, b) =>
               (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0),
           );
-        const shown = pool.slice(0, depth);
-
         return (
           <Panel key={position} className="min-h-0">
             <PanelHeader
@@ -56,12 +57,12 @@ export function PositionColumns({
               accent={POSITION_ACCENT[position]}
             />
             <PanelBody>
-              {shown.length === 0 ? (
+              {pool.length === 0 ? (
                 <p className="px-2 py-6 text-center text-2xs text-dim">All gone.</p>
               ) : (
-                shown.map((player, index) => {
+                pool.map((player, index) => {
                   const tier = player.ranks[format]?.tier;
-                  const newTier = index > 0 && tier !== shown[index - 1]?.ranks[format]?.tier;
+                  const newTier = index > 0 && tier !== pool[index - 1]?.ranks[format]?.tier;
 
                   return (
                     <div key={player.id}>

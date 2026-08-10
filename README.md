@@ -40,6 +40,10 @@ Three panes: the guide's top 150 on the left, best available by position in the
 middle, your lineup and the draft log on the right. Light by default, with a
 dark toggle in the header.
 
+All five lists fill the viewport and scroll independently — nothing is truncated
+to a fixed count, so every remaining player is reachable without leaving the
+page.
+
 League setup — scoring format, number of teams, your seat — sits in the header
 rather than behind a dialog. Roster slots are edited from the My team card, and
 round count follows roster size automatically.

@@ -106,6 +106,7 @@ export function DraftClock({
       )}
 
       <div className="ml-auto flex items-center gap-0.5">
+        <span className="mr-1.5 text-2xs lowercase text-dim">by: lunce</span>
         <IconButton
           label={theme === "dark" ? "Switch to light" : "Switch to dark"}
           onClick={onToggleTheme}
