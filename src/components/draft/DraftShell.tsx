@@ -29,6 +29,13 @@ export function DraftShell() {
   const format = state.settings.format;
   const open = useMemo(() => inFormat(available(state, PLAYERS), format), [state, format]);
   const board = useMemo(() => rankedBoard(open, format), [open, format]);
+  const specialists = useMemo(
+    () =>
+      open
+        .filter((player) => player.position === "K" || player.position === "DST")
+        .sort((a, b) => (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0)),
+    [open, format],
+  );
   const visible = useFilteredPlayers(board, filters, state.favorites);
 
   useHotkeys(
@@ -77,6 +84,7 @@ export function DraftShell() {
           favorites={favorites}
           currentPick={currentPick(state)}
           myTeams={myTeams}
+          specialists={specialists}
           onFilters={setFilters}
           onDraft={draft}
           onFavorite={star}

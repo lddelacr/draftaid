@@ -96,15 +96,16 @@ export function draftReducer(state: DraftState, action: DraftAction): DraftState
       return { ...state, picks: [] };
 
     case "settings": {
-      // Changing league shape mid-draft would re-attribute existing picks to
-      // the wrong seats, so the board is cleared with the change.
-      const shapeChanged =
-        action.settings.teamCount !== state.settings.teamCount ||
-        action.settings.rounds !== state.settings.rounds;
+      // Only team count re-attributes existing picks to different seats, so
+      // only team count clears the board. Round count and roster shape change
+      // how long the draft runs and what your lineup looks like — neither
+      // touches who picked what, and wiping the board over an added flex spot
+      // was destroying real work.
+      const reseats = action.settings.teamCount !== state.settings.teamCount;
       return {
         ...state,
         settings: action.settings,
-        picks: shapeChanged ? [] : state.picks,
+        picks: reseats ? [] : state.picks,
       };
     }
 

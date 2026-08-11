@@ -71,7 +71,7 @@ export function remainingByPosition(
   state: DraftState,
   players: readonly Player[],
 ): Record<Position, number> {
-  const counts = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  const counts: Record<Position, number> = { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 };
   for (const player of available(state, players)) counts[player.position] += 1;
   return counts;
 }
@@ -106,7 +106,7 @@ export function recentRun(
   window = 8,
 ): Record<Position, number> {
   const index = new Map(players.map((player) => [player.id, player]));
-  const counts = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  const counts: Record<Position, number> = { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 };
   for (const pick of state.picks.slice(-window)) {
     const player = index.get(pick.playerId);
     if (player) counts[player.position] += 1;

@@ -18,6 +18,8 @@ interface OverallBoardProps {
   currentPick: number;
   /** Your roster grouped by club, for stack and overlap chips. */
   myTeams: Map<NflTeam, Player[]>;
+  /** Kickers and defences, which the guide ranks but gives no overall rank. */
+  specialists: readonly Player[];
   onFilters: (filters: BoardFilters) => void;
   onDraft: (player: Player) => void;
   onFavorite: (player: Player) => void;
@@ -30,6 +32,7 @@ export function OverallBoard({
   favorites,
   currentPick,
   myTeams,
+  specialists,
   onFilters,
   onDraft,
   onFavorite,
@@ -107,6 +110,28 @@ export function OverallBoard({
           ))
         )}
       </PanelBody>
+
+      {/* Kept out of the scrolling board: the guide gives kickers and defences
+          an ADP but no overall rank, and they are only reached for at the very
+          end of a draft. Folded away here, they stay one click from the log
+          staying accurate. */}
+      <details className="border-t border-line">
+        <summary className="cursor-pointer px-2.5 py-1.5 text-2xs uppercase tracking-wide text-dim hover:text-body">
+          Kickers &amp; defences
+          <span className="tnum ml-1.5 normal-case">{specialists.length}</span>
+        </summary>
+        <div className="max-h-48 overflow-y-auto p-1">
+          {specialists.map((player) => (
+            <PlayerRow
+              key={player.id}
+              player={player}
+              format={format}
+              variant="compact"
+              onDraft={onDraft}
+            />
+          ))}
+        </div>
+      </details>
     </Panel>
   );
 }

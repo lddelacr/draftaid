@@ -15,6 +15,7 @@ Parsed from the PDF text layer, not OCR, and verified on every run.
 | Positional rankings, PPR | QB 32, RB 60, WR 60, TE 32 |
 | Positional rankings, half-PPR | QB 32, RB 60, WR 60, TE 32 |
 | Unique players | 186 (150 ranked overall + 36 depth-only) |
+| Kickers / defences | 32 + 32, from the guide's ADP tables |
 | Sentiment tags | 31 target, 15 pass, 11 avoid, 129 untagged |
 
 Both boards contain the identical set of 150 players in different orders, which
@@ -86,10 +87,18 @@ The guide spells three players two ways across its pages. Aliased to one record:
 
 No other names were ambiguous — nothing needs your verification here.
 
+## Kickers and defences
+
+Both are in, in the guide's own ADP order, carrying a positional rank and no
+overall rank — so they never appear on the 150-player board. They live in a
+folded section at the bottom of the left pane.
+
+**These two pages are images, not text.** Unlike the boards, they were read
+visually rather than parsed, so treat them as lower confidence and spot-check
+anything that looks off.
+
 ## Not yet ingested
 
-Present in the guide, parked until you want them: kicker and D/ST tables (32 each
-with ADP), '25 adjusted PPG with context notes, the luck metric, dynasty rookie
-rankings, and the OL / playcaller tables. Those pages are images rather than
-text, so they need vision extraction and should be treated as lower confidence
-than the boards above.
+Parked until you want them: '25 adjusted PPG with context notes, the luck
+metric, dynasty rookie rankings, and the OL / playcaller tables. All image pages
+with the same confidence caveat.

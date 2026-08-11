@@ -17,15 +17,18 @@ export const DEFAULT_LINEUP: LineupSlots = {
   RB: 2,
   WR: 2,
   TE: 1,
+  K: 1,
+  DST: 1,
   FLEX: 1,
   SUPERFLEX: 0,
-  BENCH: 7,
+  BENCH: 6,
 };
 
 export const SUPERFLEX_LINEUP: LineupSlots = { ...DEFAULT_LINEUP, SUPERFLEX: 1 };
 
 export const startersPerTeam = (lineup: LineupSlots): number =>
-  lineup.QB + lineup.RB + lineup.WR + lineup.TE + lineup.FLEX + lineup.SUPERFLEX;
+  lineup.QB + lineup.RB + lineup.WR + lineup.TE + lineup.K + lineup.DST +
+  lineup.FLEX + lineup.SUPERFLEX;
 
 export const rosterSize = (lineup: LineupSlots): number =>
   startersPerTeam(lineup) + lineup.BENCH;
@@ -41,7 +44,9 @@ export function openStarters(
   lineup: LineupSlots,
   roster: readonly Position[],
 ): Record<Position | "FLEX" | "SUPERFLEX", number> {
-  const filled: Record<Position, number> = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  const filled: Record<Position, number> = {
+    QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0,
+  };
   for (const position of roster) filled[position] += 1;
 
   const need = {
@@ -49,6 +54,8 @@ export function openStarters(
     RB: Math.max(0, lineup.RB - filled.RB),
     WR: Math.max(0, lineup.WR - filled.WR),
     TE: Math.max(0, lineup.TE - filled.TE),
+    K: Math.max(0, lineup.K - filled.K),
+    DST: Math.max(0, lineup.DST - filled.DST),
     FLEX: lineup.FLEX,
     SUPERFLEX: lineup.SUPERFLEX,
   };

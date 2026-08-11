@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Plus, X } from "lucide-react";
 import { type DraftState, type LineupSlots, type Player, type PlayerId, type Position, teamSlot } from "@/types";
 import { cn } from "@/lib/utils";
 import { rosters } from "@/lib/draft/selectors";
@@ -15,6 +15,8 @@ const EDITABLE: { key: keyof LineupSlots; label: string }[] = [
   { key: "WR", label: "WR" },
   { key: "TE", label: "TE" },
   { key: "FLEX", label: "FLEX" },
+  { key: "K", label: "K" },
+  { key: "DST", label: "DST" },
   { key: "SUPERFLEX", label: "SFLX" },
   { key: "BENCH", label: "BN" },
 ];
@@ -58,8 +60,15 @@ export function LineupCard({
     0,
   );
 
-  const step = (direction: number) =>
-    setViewSlot(((slot - 1 + direction + teamCount) % teamCount) + 1);
+  /** Net value per seat, so the dropdown doubles as a league-wide scoreboard. */
+  const allRosters = rosters(state, players);
+  const netBySlot = new Map<number, number>();
+  for (const [seat, seatRoster] of allRosters) {
+    netBySlot.set(
+      seat,
+      seatRoster.reduce((total: number, player: Player) => total + (deltaOf(player) ?? 0), 0),
+    );
+  }
 
   const byeCounts = new Map<number, number>();
   for (const slot of starters) {
@@ -76,7 +85,7 @@ export function LineupCard({
 
   return (
     <Panel className="shrink-0">
-      <PanelHeader title={mine ? "My team" : `Seat ${slot}`} count={roster.length}>
+      <PanelHeader title="Team" count={roster.length}>
         <span
           title="Net picks past rank across this roster — positive is value, negative is reaching"
           className={cn(
@@ -86,22 +95,22 @@ export function LineupCard({
         >
           {net > 0 ? `+${net}` : net}
         </span>
-        <button
-          type="button"
-          onClick={() => step(-1)}
-          aria-label="Previous team"
-          className="rounded p-0.5 text-dim hover:bg-sunken hover:text-body"
+        <select
+          value={slot}
+          onChange={(event) => setViewSlot(Number(event.target.value))}
+          aria-label="Which team to view"
+          className="rounded-md border border-line bg-sunken px-1 py-0.5 text-2xs text-body hover:border-line-strong"
         >
-          <ChevronLeft className="size-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => step(1)}
-          aria-label="Next team"
-          className="rounded p-0.5 text-dim hover:bg-sunken hover:text-body"
-        >
-          <ChevronRight className="size-3.5" />
-        </button>
+          {Array.from({ length: teamCount }, (_, index) => index + 1).map((seat) => {
+            const value = netBySlot.get(seat) ?? 0;
+            const label = seat === mySlot ? "Me" : `Team ${seat}`;
+            return (
+              <option key={seat} value={seat}>
+                {label} ({value > 0 ? `+${value}` : value})
+              </option>
+            );
+          })}
+        </select>
       </PanelHeader>
 
       <div className="flex items-center gap-2 border-b border-line px-2.5 py-1 text-2xs uppercase tracking-wide text-dim">

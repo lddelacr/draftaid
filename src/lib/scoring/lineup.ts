@@ -38,6 +38,8 @@ function slotOrder(lineup: LineupSlots): SlotKind[] {
   push("WR", lineup.WR);
   push("TE", lineup.TE);
   push("FLEX", lineup.FLEX);
+  push("K", lineup.K);
+  push("DST", lineup.DST);
   push("SUPERFLEX", lineup.SUPERFLEX);
   return order;
 }

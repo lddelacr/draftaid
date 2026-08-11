@@ -65,9 +65,9 @@ The app is entirely client-side, so it can ship either way:
 
 ## My team
 
-Arrows in the card header walk the same lineup view across every seat in the
-league, so scouting the team picking ahead of you uses the same layout as your
-own. Each player carries a `vs rk` figure — picks past the guide's rank, so
+A dropdown in the card header switches the lineup view to any seat in the
+league, each option showing that roster's net value, so the picker doubles as a
+league-wide scoreboard. Each player carries a `vs rk` figure — picks past the guide's rank, so
 positive means value — and the header totals it for the roster.
 
 Roster slot editing only appears on your own team.

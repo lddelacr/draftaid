@@ -1,6 +1,6 @@
 "use client";
 
-import { POSITIONS, type NflTeam, type Player, type Position, type ScoringFormat } from "@/types";
+import { SKILL_POSITIONS, type NflTeam, type Player, type ScoringFormat, type SkillPosition } from "@/types";
 import { POSITION_ACCENT } from "@/lib/presentation";
 import { Panel, PanelBody, PanelHeader } from "@/components/layout/Panel";
 import { stackSignals } from "@/lib/draft/stacks";
@@ -15,7 +15,7 @@ interface PositionColumnsProps {
   onFavorite: (player: Player) => void;
 }
 
-const LABEL: Record<Position, string> = {
+const LABEL: Record<SkillPosition, string> = {
   QB: "Quarterbacks",
   RB: "Running backs",
   WR: "Wide receivers",
@@ -45,7 +45,7 @@ export function PositionColumns({
 }: PositionColumnsProps) {
   return (
     <div className="grid min-h-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      {POSITIONS.map((position) => {
+      {SKILL_POSITIONS.map((position) => {
         const remaining = players
           .filter((player) => player.position === position && player.ranks[format])
           .sort(

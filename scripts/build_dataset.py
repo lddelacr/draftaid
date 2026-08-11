@@ -85,7 +85,7 @@ TEAMS: dict[str, tuple[str, str]] = {
     "Jaylen Warren": ("PIT", "guide"), "Rico Dowdle": ("PIT", "news"),
     "RJ Harvey": ("DEN", "prior"), "Tony Pollard": ("TEN", "prior"),
     "Jonathon Brooks": ("CAR", "guide"), "Blake Corum": ("LAR", "prior"),
-    "Kyle Monangai": ("CHI", "prior"), "Rachaad White": ("TB", "prior"),
+    "Kyle Monangai": ("CHI", "prior"), "Rachaad White": ("WAS", "stated"),
     "J.K. Dobbins": ("DEN", "prior"), "Kenny Gainwell": ("TB", "news"),
     "Jordan Mason": ("MIN", "prior"), "Jacory Croskey-Merritt": ("WAS", "prior"),
     "Zach Charbonnet": ("SEA", "prior"), "Chris Rodriguez Jr.": ("WAS", "prior"),
@@ -154,6 +154,32 @@ TEAMS: dict[str, tuple[str, str]] = {
 # fmt: on
 
 
+# --- Kickers and defences -------------------------------------------------
+# From the guide's kicker and D/ST pages, in its own ADP order. Those two pages
+# are images rather than text, so unlike the boards these were read visually and
+# should be treated as lower confidence.
+KICKERS = [
+    ("DAL", "Brandon Aubrey"), ("HOU", "Ka'imi Fairbairn"), ("LAC", "Cameron Dicker"),
+    ("SEA", "Jason Myers"), ("JAX", "Cam Little"), ("SF", "Eddie Pineiro"),
+    ("BAL", "Tyler Loop"), ("CHI", "Cairo Santos"), ("CIN", "Evan McPherson"),
+    ("NE", "Andres Borregales"), ("DET", "Jake Bates"), ("LAR", "Harrison Mevis"),
+    ("TB", "Chase McLaughlin"), ("PIT", "Chris Boswell"), ("KC", "Harrison Butker"),
+    ("MIN", "Will Reichard"), ("DEN", "Wil Lutz"), ("NO", "Charlie Smyth"),
+    ("PHI", "Jake Elliott"), ("ARI", "Chad Ryland"), ("IND", "Spencer Shrader"),
+    ("CAR", "Ryan Fitzgerald"), ("TEN", "Joey Slye"), ("MIA", "Zane Gonzalez"),
+    ("BUF", "Tyler Bass"), ("ATL", "Nick Folk"), ("LV", "Daniel Carlson"),
+    ("GB", "Trey Smack"), ("NYG", "Ben Sauls"), ("WAS", "Jake Moody"),
+    ("NYJ", "Jason Sanders"), ("CLE", "Andre Szmyt"),
+]
+
+DEFENSES = [
+    "HOU", "LAR", "SEA", "DEN", "NE", "PHI", "JAX", "PIT",
+    "MIN", "LAC", "BAL", "CHI", "CLE", "GB", "BUF", "DET",
+    "NO", "ATL", "KC", "NYG", "SF", "IND", "DAL", "CAR",
+    "TB", "TEN", "CIN", "LV", "WAS", "MIA", "NYJ", "ARI",
+]
+
+
 def slugify(name: str) -> str:
     ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "-", ascii_name.lower()).strip("-")
@@ -206,6 +232,25 @@ def main() -> None:
         player["byeWeek"] = BYE_BY_TEAM.get(team) if team else None
         if source in ("unknown",):
             unmapped.append(player["name"])
+
+    # Kickers and defences carry a positional rank from the guide's ADP order
+    # and no overall rank, so they stay out of the 150-player board.
+    for index, (team, name) in enumerate(KICKERS, start=1):
+        players[name] = {
+            "id": slugify(name), "name": name, "position": "K",
+            "sentiment": "neutral", "team": team, "teamSource": "guide",
+            "byeWeek": BYE_BY_TEAM.get(team),
+            "ranks": {fmt: {"position": index, "tier": 1} for fmt in ("ppr", "half")},
+        }
+
+    for index, team in enumerate(DEFENSES, start=1):
+        name = f"{team} D/ST"
+        players[name] = {
+            "id": slugify(name), "name": name, "position": "DST",
+            "sentiment": "neutral", "team": team, "teamSource": "guide",
+            "byeWeek": BYE_BY_TEAM.get(team),
+            "ranks": {fmt: {"position": index, "tier": 1} for fmt in ("ppr", "half")},
+        }
 
     ordered = sorted(
         players.values(),

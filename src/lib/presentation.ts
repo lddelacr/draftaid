@@ -12,6 +12,8 @@ export const POSITION_STYLES: Record<Position, string> = {
   RB: "text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-500/15",
   WR: "text-sky-700 bg-sky-100 dark:text-sky-300 dark:bg-sky-500/15",
   TE: "text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-500/15",
+  K: "text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-500/15",
+  DST: "text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-500/15",
 };
 
 export const POSITION_ACCENT: Record<Position, string> = {
@@ -19,6 +21,8 @@ export const POSITION_ACCENT: Record<Position, string> = {
   RB: "bg-emerald-500",
   WR: "bg-sky-500",
   TE: "bg-amber-500",
+  K: "bg-slate-400",
+  DST: "bg-slate-400",
 };
 
 export const SENTIMENT_LABEL: Record<Sentiment, string> = {

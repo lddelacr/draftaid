@@ -16,8 +16,14 @@ export const playerId = (value: string) => value as PlayerId;
 export const pickNumber = (value: number) => value as PickNumber;
 export const teamSlot = (value: number) => value as TeamSlot;
 
-export type Position = "QB" | "RB" | "WR" | "TE";
-export const POSITIONS: readonly Position[] = ["QB", "RB", "WR", "TE"];
+export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
+
+/** Everything the guide ranks. */
+export const POSITIONS: readonly Position[] = ["QB", "RB", "WR", "TE", "K", "DST"];
+
+/** The four that get a column of their own on the board. */
+export type SkillPosition = Extract<Position, "QB" | "RB" | "WR" | "TE">;
+export const SKILL_POSITIONS: readonly SkillPosition[] = ["QB", "RB", "WR", "TE"];
 
 /** Scoring formats the guide provides rankings for. */
 export type ScoringFormat = "ppr" | "half";
@@ -60,6 +66,8 @@ export interface LineupSlots {
   readonly RB: number;
   readonly WR: number;
   readonly TE: number;
+  readonly K: number;
+  readonly DST: number;
   readonly FLEX: number;
   /** Superflex: a second slot that also accepts a QB. Zero disables it. */
   readonly SUPERFLEX: number;
