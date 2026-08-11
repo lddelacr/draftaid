@@ -90,8 +90,8 @@ No other names were ambiguous — nothing needs your verification here.
 ## Kickers and defences
 
 Both are in, in the guide's own ADP order, carrying a positional rank and no
-overall rank — so they never appear on the 150-player board. They live in a
-folded section at the bottom of the left pane.
+overall rank — so they never appear inside the 150. They sit at the bottom of
+the overall board as D1-D32 and K1-K32.
 
 **These two pages are images, not text.** Unlike the boards, they were read
 visually rather than parsed, so treat them as lower confidence and spot-check

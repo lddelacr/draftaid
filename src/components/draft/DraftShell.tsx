@@ -28,14 +28,22 @@ export function DraftShell() {
 
   const format = state.settings.format;
   const open = useMemo(() => inFormat(available(state, PLAYERS), format), [state, format]);
-  const board = useMemo(() => rankedBoard(open, format), [open, format]);
-  const specialists = useMemo(
-    () =>
-      open
-        .filter((player) => player.position === "K" || player.position === "DST")
-        .sort((a, b) => (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0)),
-    [open, format],
-  );
+  /**
+   * The guide's 150, then kickers and defences on the end. They carry their own
+   * K1-K32 and D1-D32 ordering and no overall rank, so they sit below the board
+   * without displacing anyone in it.
+   */
+  const board = useMemo(() => {
+    const ranked = rankedBoard(open, format);
+    const specialists = open
+      .filter((player) => player.position === "K" || player.position === "DST")
+      .sort(
+        (a, b) =>
+          a.position.localeCompare(b.position) ||
+          (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0),
+      );
+    return [...ranked, ...specialists];
+  }, [open, format]);
   const visible = useFilteredPlayers(board, filters, state.favorites);
 
   useHotkeys(
@@ -84,7 +92,6 @@ export function DraftShell() {
           favorites={favorites}
           currentPick={currentPick(state)}
           myTeams={myTeams}
-          specialists={specialists}
           onFilters={setFilters}
           onDraft={draft}
           onFavorite={star}

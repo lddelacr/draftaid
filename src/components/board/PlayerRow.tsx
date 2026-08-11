@@ -5,6 +5,7 @@ import { Ban, Star } from "lucide-react";
 import type { Player, ScoringFormat } from "@/types";
 import { cn } from "@/lib/utils";
 import {
+  POSITION_ABBR,
   POSITION_STYLES,
   SENTIMENT_DOT,
   SENTIMENT_LABEL,
@@ -75,7 +76,9 @@ function PlayerRowImpl({
           )}
         >
           {/* A player ranked in one format may be absent from the other. */}
-          {full ? `${player.position}${rank?.position ?? ""}` : (rank?.position ?? player.position)}
+          {full
+            ? `${POSITION_ABBR[player.position]}${rank?.position ?? ""}`
+            : (rank?.position ?? POSITION_ABBR[player.position])}
         </span>
 
         <span className="flex min-w-0 flex-1 items-center gap-1.5">

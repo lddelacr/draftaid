@@ -45,6 +45,13 @@ in white space so the middle pane stays readable at a glance. Each column header
 carries the true remaining count, and anyone past the slice is a search away on
 the left.
 
+Kickers and defences sit at the bottom of the overall board with their own
+D1-D32 and K1-K32 ordering. They carry no overall rank, so they never displace
+anyone inside the guide's 150.
+
+Roster slots are league-wide and editable from any team's card. Changing them
+adjusts the lineup and round count without touching the picks already made.
+
 League setup — scoring format, number of teams, your seat — sits in the header
 rather than behind a dialog. Roster slots are edited from the My team card, and
 round count follows roster size automatically.

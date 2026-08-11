@@ -29,6 +29,12 @@ function revive(raw: string): DraftState | null {
     const known = new Set(PLAYERS.map((player) => player.id));
     return {
       ...parsed,
+      settings: {
+        ...parsed.settings,
+        // A draft saved before a lineup slot existed has no value for it, and
+        // undefined + 1 is NaN. Defaults fill any gap.
+        lineup: { ...DEFAULT_LINEUP, ...parsed.settings.lineup },
+      },
       picks: parsed.picks.filter((pick) => known.has(pick.playerId)),
       favorites: (parsed.favorites ?? []).filter((id) => known.has(id)),
       queue: (parsed.queue ?? []).filter((id) => known.has(id)),

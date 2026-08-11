@@ -25,6 +25,16 @@ export const POSITION_ACCENT: Record<Position, string> = {
   DST: "bg-slate-400",
 };
 
+/** D/ST is too wide for a rank badge; everything else reads as itself. */
+export const POSITION_ABBR: Record<Position, string> = {
+  QB: "QB",
+  RB: "RB",
+  WR: "WR",
+  TE: "TE",
+  K: "K",
+  DST: "D",
+};
+
 export const SENTIMENT_LABEL: Record<Sentiment, string> = {
   target: "Target",
   pass: "Passing",

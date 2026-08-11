@@ -80,12 +80,12 @@ export function LineupCard({
   const adjust = (key: keyof LineupSlots, delta: number) =>
     onLineup({
       ...state.settings.lineup,
-      [key]: Math.max(0, Math.min(9, state.settings.lineup[key] + delta)),
+      [key]: Math.max(0, Math.min(9, (state.settings.lineup[key] ?? 0) + delta)),
     });
 
   return (
     <Panel className="shrink-0">
-      <PanelHeader title="Team" count={roster.length}>
+      <PanelHeader title={mine ? "My team" : `Team ${slot}`} count={roster.length}>
         <span
           title="Net picks past rank across this roster — positive is value, negative is reaching"
           className={cn(
@@ -198,10 +198,10 @@ export function LineupCard({
         )}
       </div>
 
-      {mine && (
       <details className="border-t border-line">
         <summary className="cursor-pointer px-2.5 py-1.5 text-2xs uppercase tracking-wide text-dim hover:text-body">
           Roster slots
+          <span className="ml-1.5 normal-case text-dim">· league-wide</span>
         </summary>
         <div className="grid grid-cols-2 gap-1 px-2 pb-2">
           {EDITABLE.map(({ key, label }) => (
@@ -211,7 +211,7 @@ export function LineupCard({
                 <Minus className="size-3" />
               </Stepper>
               <span className="tnum w-3 text-center text-2xs text-body">
-                {state.settings.lineup[key]}
+                {state.settings.lineup[key] ?? 0}
               </span>
               <Stepper onClick={() => adjust(key, 1)} label={`One more ${label}`}>
                 <Plus className="size-3" />
@@ -220,7 +220,6 @@ export function LineupCard({
           ))}
         </div>
       </details>
-      )}
     </Panel>
   );
 }
