@@ -70,6 +70,35 @@ The app is entirely client-side, so it can ship either way:
   dropped on any static host, including GitHub Pages. Set `basePath` if it
   lives in a subdirectory rather than at the domain root.
 
+## Ranking sets
+
+The board evaluates against an active **ranking book**. Two kinds exist:
+
+- **Default Guide (PPR / Half PPR)** — the built-in data, immutable. There is no
+  writable representation of it anywhere in the app.
+- **Custom sets** — yours, created by cloning a guide board and editing it.
+
+Pick one from the rankings menu in the header. Switching is instant and touches
+nothing about the draft: picks, seats, rosters and league settings are stored
+separately and share no code path with rankings.
+
+Everything ranking-derived follows the active book — board order, tiers, tier
+names, target/pass/avoid, vs-rank, value flags, position columns and the command
+palette.
+
+Scoring format rides on the ranking source rather than being a separate control,
+so the board on screen can never disagree with the format setting.
+
+### The editor
+
+Drag a row to move a player; the dropped player adopts the tier they land in.
+Alt+↑ / Alt+↓ nudge by one, and T / P / A toggle a designation on the focused
+row. Scissors starts a new tier at that player; "Merge up" folds a tier into the
+one above. Tiers can be named. Edits save as you make them, with undo.
+
+Drag is disabled while a search or position filter is active, since dropping
+into a filtered list has no unambiguous meaning.
+
 ## My team
 
 A dropdown in the card header switches the lineup view to any seat in the

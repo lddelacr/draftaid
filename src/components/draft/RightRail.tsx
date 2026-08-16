@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Minus, Plus, X } from "lucide-react";
 import { type DraftState, type LineupSlots, type Player, type PlayerId, type Position, teamSlot } from "@/types";
+import type { RankingBook } from "@/lib/rankings/book";
 import { cn } from "@/lib/utils";
 import { rosters } from "@/lib/draft/selectors";
 import { fillLineup } from "@/lib/scoring/lineup";
@@ -32,17 +33,34 @@ const EDITABLE: { key: keyof LineupSlots; label: string }[] = [
 export function LineupCard({
   state,
   players,
+  book,
   onLineup,
 }: {
   state: DraftState;
   players: readonly Player[];
+  book: RankingBook;
   onLineup: (lineup: LineupSlots) => void;
 }) {
-  const [viewSlot, setViewSlot] = useState<number>(state.settings.mySlot);
-  const { teamCount, mySlot, format } = state.settings;
+  const { teamCount, mySlot } = state.settings;
 
-  // Follow the user's seat if they change it in the header.
-  const slot = Math.min(viewSlot, teamCount);
+  /**
+   * Which seat the card is showing.
+   *
+   * The seat in league settings is the canonical identity of "my team", so a
+   * seat change has to move the card with it — previously the card seeded from
+   * mySlot once and then drifted, leaving you looking at seat 4's roster after
+   * moving to seat 7. Browsing another team stays possible; it just does not
+   * survive changing who you are.
+   */
+  const [browsing, setBrowsing] = useState<number | null>(null);
+  const [seenSlot, setSeenSlot] = useState<number>(mySlot);
+
+  if (seenSlot !== mySlot) {
+    setSeenSlot(mySlot);
+    setBrowsing(null);
+  }
+
+  const slot = Math.min(browsing ?? mySlot, teamCount);
   const mine = slot === mySlot;
 
   const roster = rosters(state, players).get(teamSlot(slot)) ?? [];
@@ -51,7 +69,7 @@ export function LineupCard({
   /** Pick number each player went at, for the value column. */
   const pickOf = new Map(state.picks.map((pick) => [pick.playerId, pick.pick]));
   const deltaOf = (player: Player): number | null => {
-    const rank = player.ranks[format]?.overall;
+    const rank = book.entry(player.id)?.overall;
     const pick = pickOf.get(player.id);
     return rank === undefined || pick === undefined ? null : pick - rank;
   };
@@ -97,7 +115,7 @@ export function LineupCard({
         </span>
         <select
           value={slot}
-          onChange={(event) => setViewSlot(Number(event.target.value))}
+          onChange={(event) => setBrowsing(Number(event.target.value))}
           aria-label="Which team to view"
           className="rounded-md border border-line bg-sunken px-1 py-0.5 text-2xs text-body hover:border-line-strong"
         >
@@ -273,18 +291,19 @@ type Sort = "order" | "value" | "reach";
 export function DraftHistory({
   state,
   players,
+  book,
   onRemove,
 }: {
   state: DraftState;
   players: readonly Player[];
+  book: RankingBook;
   onRemove: (playerId: PlayerId) => void;
 }) {
   const [sort, setSort] = useState<Sort>("order");
   const index = new Map(players.map((player) => [player.id, player]));
-  const format = state.settings.format;
 
   const deltaOf = (pick: (typeof state.picks)[number]): number | null => {
-    const rank = index.get(pick.playerId)?.ranks[format]?.overall;
+    const rank = book.entry(pick.playerId)?.overall;
     return rank === undefined ? null : pick.pick - rank;
   };
 
@@ -339,7 +358,7 @@ export function DraftHistory({
               const player = index.get(pick.playerId);
               const mine = pick.slot === state.settings.mySlot;
               const inRound = ((pick.pick - 1) % state.settings.teamCount) + 1;
-              const rank = player?.ranks[format]?.overall;
+              const rank = book.entry(pick.playerId)?.overall;
               const delta = deltaOf(pick);
 
               return (

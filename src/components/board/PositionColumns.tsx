@@ -1,6 +1,7 @@
 "use client";
 
-import { SKILL_POSITIONS, type NflTeam, type Player, type ScoringFormat, type SkillPosition } from "@/types";
+import { SKILL_POSITIONS, type NflTeam, type Player, type SkillPosition } from "@/types";
+import type { RankingBook } from "@/lib/rankings/book";
 import { POSITION_ACCENT } from "@/lib/presentation";
 import { Panel, PanelBody, PanelHeader } from "@/components/layout/Panel";
 import { stackSignals } from "@/lib/draft/stacks";
@@ -8,7 +9,7 @@ import { PlayerRow } from "./PlayerRow";
 
 interface PositionColumnsProps {
   players: readonly Player[];
-  format: ScoringFormat;
+  book: RankingBook;
   favorites: ReadonlySet<string>;
   myTeams: Map<NflTeam, Player[]>;
   onDraft: (player: Player) => void;
@@ -37,7 +38,7 @@ const DEPTH = 20;
 
 export function PositionColumns({
   players,
-  format,
+  book,
   favorites,
   myTeams,
   onDraft,
@@ -47,10 +48,10 @@ export function PositionColumns({
     <div className="grid min-h-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {SKILL_POSITIONS.map((position) => {
         const remaining = players
-          .filter((player) => player.position === position && player.ranks[format])
+          .filter((player) => player.position === position && book.entry(player.id))
           .sort(
             (a, b) =>
-              (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0),
+              (book.entry(a.id)?.position ?? 0) - (book.entry(b.id)?.position ?? 0),
           );
         // The header keeps the true remaining count; the list shows a slice.
         const pool = remaining.slice(0, DEPTH);
@@ -66,8 +67,10 @@ export function PositionColumns({
                 <p className="px-2 py-6 text-center text-2xs text-dim">All gone.</p>
               ) : (
                 pool.map((player, index) => {
-                  const tier = player.ranks[format]?.tier;
-                  const newTier = index > 0 && tier !== pool[index - 1]?.ranks[format]?.tier;
+                  const tier = book.entry(player.id)?.tier;
+                  const previous = pool[index - 1];
+                  const newTier =
+                    index > 0 && tier !== (previous ? book.entry(previous.id)?.tier : undefined);
 
                   return (
                     <div key={player.id}>
@@ -75,13 +78,15 @@ export function PositionColumns({
                         // The guide draws these breaks itself — the sharpest
                         // signal on the page, so they stay visible.
                         <div className="flex items-center gap-1.5 px-2 py-0.5">
-                          <span className="tnum text-2xs text-dim">Tier {tier}</span>
+                          <span className="tnum text-2xs text-dim">
+                            {(tier !== undefined && book.tierName(tier)) || `Tier ${tier}`}
+                          </span>
                           <span className="h-px flex-1 bg-line" />
                         </div>
                       )}
                       <PlayerRow
                         player={player}
-                        format={format}
+                        rank={book.entry(player.id)}
                         variant="compact"
                         signals={stackSignals(player, myTeams)}
                         isFavorite={favorites.has(player.id)}

@@ -2,7 +2,8 @@
 
 import { memo } from "react";
 import { Ban, Star } from "lucide-react";
-import type { Player, ScoringFormat } from "@/types";
+import type { Player } from "@/types";
+import type { RankedEntry } from "@/lib/rankings/book";
 import { cn } from "@/lib/utils";
 import {
   POSITION_ABBR,
@@ -17,7 +18,8 @@ import { StackChip, conflictTitle } from "./StackChip";
 
 interface PlayerRowProps {
   player: Player;
-  format: ScoringFormat;
+  /** Resolved standing from the active ranking book. */
+  rank: RankedEntry | undefined;
   /**
    * "full" is the overall board: rank, bye, and the guide's mark as a dot.
    * "compact" is a position column: the guide's mark tints the whole row and
@@ -35,7 +37,7 @@ interface PlayerRowProps {
 
 function PlayerRowImpl({
   player,
-  format,
+  rank,
   variant = "full",
   slide,
   signals,
@@ -43,9 +45,9 @@ function PlayerRowImpl({
   onDraft,
   onFavorite,
 }: PlayerRowProps) {
-  const rank = player.ranks[format];
   const full = variant === "full";
-  const marked = player.sentiment !== "neutral";
+  const sentiment = rank?.sentiment ?? "neutral";
+  const marked = sentiment !== "neutral";
 
   const conflict = signals?.find((signal) => signal.kind === "conflict");
   const conflictNames = conflict?.partners.map((partner) => partner.name).join(", ");
@@ -84,9 +86,9 @@ function PlayerRowImpl({
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           {full && marked && (
             <span
-              title={SENTIMENT_LABEL[player.sentiment]}
-              aria-label={SENTIMENT_LABEL[player.sentiment]}
-              className={cn("size-1.5 shrink-0 rounded-full", SENTIMENT_DOT[player.sentiment])}
+              title={SENTIMENT_LABEL[sentiment]}
+              aria-label={SENTIMENT_LABEL[sentiment]}
+              className={cn("size-1.5 shrink-0 rounded-full", SENTIMENT_DOT[sentiment])}
             />
           )}
           <span className="truncate text-sm text-body">{player.name}</span>
@@ -107,10 +109,10 @@ function PlayerRowImpl({
           <span
             className={cn(
               "shrink-0 rounded px-1 py-px text-2xs font-medium",
-              SENTIMENT_TAG[player.sentiment],
+              SENTIMENT_TAG[sentiment],
             )}
           >
-            {SENTIMENT_WORD[player.sentiment]}
+            {SENTIMENT_WORD[sentiment]}
           </span>
         )}
 

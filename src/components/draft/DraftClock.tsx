@@ -1,7 +1,14 @@
 "use client";
 
 import { Moon, RotateCcw, Sun, Undo2 } from "lucide-react";
-import { type DraftState, type LeagueSettings, type ScoringFormat, teamSlot } from "@/types";
+import {
+  type DraftState,
+  type LeagueSettings,
+  type RankingSet,
+  type RankingSource,
+  teamSlot,
+} from "@/types";
+import { RankingsMenu } from "@/components/rankings/RankingsMenu";
 import { cn } from "@/lib/utils";
 import {
   currentPick,
@@ -11,7 +18,6 @@ import {
   picksBeforeMyNext,
 } from "@/lib/draft/selectors";
 import { roundOf } from "@/lib/draft/snake";
-import { FORMAT_LABELS } from "@/lib/scoring/formats";
 import type { Theme } from "@/hooks/useTheme";
 
 interface DraftClockProps {
@@ -21,14 +27,26 @@ interface DraftClockProps {
   onSettings: (settings: LeagueSettings) => void;
   onUndo: () => void;
   onReset: () => void;
+  rankingSets: readonly RankingSet[];
+  activeRanking: RankingSource;
+  activeRankingName: string;
+  onActivateRanking: (source: RankingSource) => void;
+  onCreateRanking: () => void;
+  onEditRanking: (set: RankingSet) => void;
+  onDuplicateRanking: (set: RankingSet) => void;
+  onDeleteRanking: (set: RankingSet) => void;
 }
 
 const TEAM_COUNTS = [8, 10, 12, 14, 16];
 
 /**
- * League setup lives here rather than behind a dialog: format, league size and
- * your seat are the three things you check before every draft, and burying them
- * one click deep made it unclear they existed at all.
+ * League setup lives here rather than behind a dialog: which rankings, league
+ * size and your seat are the three things you check before every draft, and
+ * burying them one click deep made it unclear they existed at all.
+ *
+ * Scoring format now rides on the ranking source — choosing the PPR or
+ * half-PPR guide *is* the format choice — so it is no longer a separate
+ * control that could disagree with the board on screen.
  */
 export function DraftClock({
   state,
@@ -37,9 +55,17 @@ export function DraftClock({
   onSettings,
   onUndo,
   onReset,
+  rankingSets,
+  activeRanking,
+  activeRankingName,
+  onActivateRanking,
+  onCreateRanking,
+  onEditRanking,
+  onDuplicateRanking,
+  onDeleteRanking,
 }: DraftClockProps) {
   const pick = currentPick(state);
-  const { teamCount, mySlot, format } = state.settings;
+  const { teamCount, mySlot } = state.settings;
   const mine = isMyPick(state);
   const done = isComplete(state);
   const away = picksBeforeMyNext(state);
@@ -49,11 +75,15 @@ export function DraftClock({
     <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-panel px-3 py-2">
       <span className="text-sm font-semibold tracking-tight text-body">Draftaid</span>
 
-      <Select
-        label="Scoring"
-        value={format}
-        onChange={(value) => onSettings({ ...state.settings, format: value as ScoringFormat })}
-        options={Object.entries(FORMAT_LABELS).map(([value, label]) => ({ value, label }))}
+      <RankingsMenu
+        sets={rankingSets}
+        active={activeRanking}
+        activeName={activeRankingName}
+        onActivate={onActivateRanking}
+        onCreate={onCreateRanking}
+        onEdit={onEditRanking}
+        onDuplicate={onDuplicateRanking}
+        onDelete={onDeleteRanking}
       />
 
       <Select

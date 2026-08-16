@@ -61,6 +61,37 @@ export interface Player {
   readonly ranks: Partial<Record<ScoringFormat, FormatRank>>;
 }
 
+/**
+ * A user-owned ranking set.
+ *
+ * Entries reference canonical players by id and never copy player records —
+ * name, club and bye always come from PLAYERS. Array order *is* overall rank,
+ * so reordering is a splice rather than a renumbering pass, and positional rank
+ * is derived from order within a position rather than stored twice.
+ */
+export interface RankingEntry {
+  readonly playerId: PlayerId;
+  readonly tier: number;
+  readonly sentiment: Sentiment;
+}
+
+export interface RankingSet {
+  readonly id: string;
+  readonly name: string;
+  /** Which guide board a "start from default" clone was taken from. */
+  readonly format: ScoringFormat;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+  readonly entries: readonly RankingEntry[];
+  /** Optional per-tier labels, keyed by tier number. */
+  readonly tierNames: Readonly<Record<number, string>>;
+}
+
+/** The built-in guide, or one of the user's sets. */
+export type RankingSource =
+  | { readonly kind: "default"; readonly format: ScoringFormat }
+  | { readonly kind: "custom"; readonly setId: string };
+
 export interface LineupSlots {
   readonly QB: number;
   readonly RB: number;

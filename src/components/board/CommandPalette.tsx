@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CornerDownLeft } from "lucide-react";
-import type { Player, ScoringFormat } from "@/types";
+import type { Player } from "@/types";
+import type { RankingBook } from "@/lib/rankings/book";
 import { cn } from "@/lib/utils";
 import { matches } from "@/hooks/useFilteredPlayers";
 import { POSITION_STYLES, SENTIMENT_DOT } from "@/lib/presentation";
@@ -11,7 +12,7 @@ import { POSITION_STYLES, SENTIMENT_DOT } from "@/lib/presentation";
 interface CommandPaletteProps {
   open: boolean;
   players: readonly Player[];
-  format: ScoringFormat;
+  book: RankingBook;
   onClose: () => void;
   onDraft: (player: Player) => void;
 }
@@ -24,7 +25,7 @@ interface CommandPaletteProps {
 export function CommandPalette({
   open,
   players,
-  format,
+  book,
   onClose,
   onDraft,
 }: CommandPaletteProps) {
@@ -117,7 +118,7 @@ export function CommandPalette({
                   )}
                 >
                   <span className="tnum w-8 text-right text-sm text-muted">
-                    {player.ranks[format]?.overall ?? "—"}
+                    {book.entry(player.id)?.overall ?? "—"}
                   </span>
                   <span
                     className={cn(
@@ -126,11 +127,11 @@ export function CommandPalette({
                     )}
                   >
                     {player.position}
-                    {player.ranks[format]?.position}
+                    {book.entry(player.id)?.position}
                   </span>
-                  {player.sentiment !== "neutral" && (
+                  {(book.entry(player.id)?.sentiment ?? "neutral") !== "neutral" && (
                     <span
-                      className={cn("size-1.5 rounded-full", SENTIMENT_DOT[player.sentiment])}
+                      className={cn("size-1.5 rounded-full", SENTIMENT_DOT[book.entry(player.id)?.sentiment ?? "neutral"])}
                     />
                   )}
                   <span className="flex-1 truncate text-sm text-body">{player.name}</span>

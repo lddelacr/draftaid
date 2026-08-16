@@ -5,33 +5,28 @@ import {
   type Player,
   type PlayerId,
   type Position,
-  type ScoringFormat,
   type TeamSlot,
   pickNumber,
   teamSlot,
 } from "@/types";
 import { picksUntilSlot, slotOnClock, totalPicks } from "./snake";
+import { type RankingBook, byBook, rankValue } from "@/lib/rankings/book";
 
 /**
  * Read models over `DraftState`. Everything is derived — no denormalised copies
  * of the player list that can fall out of step with the picks.
  */
 
-export const rankIn = (player: Player, format: ScoringFormat): number =>
-  player.ranks[format]?.overall ?? 900 + (player.ranks[format]?.position ?? 99);
-
-export const byRank =
-  (format: ScoringFormat) =>
-  (a: Player, b: Player): number =>
-    rankIn(a, format) - rankIn(b, format);
-
 export const draftedIds = (state: DraftState): Set<PlayerId> =>
   new Set(state.picks.map((pick) => pick.playerId));
 
-export function available(state: DraftState, players: readonly Player[]): Player[] {
+export function available(
+  state: DraftState,
+  players: readonly Player[],
+  book: RankingBook,
+): Player[] {
   const gone = draftedIds(state);
-  return players.filter((player) => !gone.has(player.id))
-    .sort(byRank(state.settings.format));
+  return players.filter((player) => !gone.has(player.id)).sort(byBook(book));
 }
 
 export const currentPick = (state: DraftState): PickNumber =>
@@ -70,9 +65,10 @@ export const myRoster = (state: DraftState, players: readonly Player[]): Player[
 export function remainingByPosition(
   state: DraftState,
   players: readonly Player[],
+  book: RankingBook,
 ): Record<Position, number> {
   const counts: Record<Position, number> = { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DST: 0 };
-  for (const player of available(state, players)) counts[player.position] += 1;
+  for (const player of available(state, players, book)) counts[player.position] += 1;
   return counts;
 }
 
@@ -84,16 +80,17 @@ export function remainingByPosition(
 export function tierRunway(
   state: DraftState,
   players: readonly Player[],
+  book: RankingBook,
 ): Record<Position, { tier: number; left: number } | null> {
-  const format = state.settings.format;
-  const open = available(state, players);
+  const open = available(state, players, book);
   const result = {} as Record<Position, { tier: number; left: number } | null>;
 
   for (const position of POSITIONS) {
     const pool = open.filter((player) => player.position === position);
-    const tier = pool[0]?.ranks[format]?.tier;
+    const first = pool[0];
+    const tier = first ? book.entry(first.id)?.tier : undefined;
     result[position] = tier
-      ? { tier, left: pool.filter((p) => p.ranks[format]?.tier === tier).length }
+      ? { tier, left: pool.filter((p) => book.entry(p.id)?.tier === tier).length }
       : null;
   }
   return result;
@@ -129,8 +126,9 @@ export const picksBeforeMyNext = (state: DraftState): number | null =>
 export function fallenBy(
   player: Player,
   state: DraftState,
+  book: RankingBook,
 ): number {
-  const rank = player.ranks[state.settings.format]?.overall;
+  const rank = book.entry(player.id)?.overall;
   return rank ? state.picks.length + 1 - rank : 0;
 }
 
@@ -142,23 +140,21 @@ export function fallenBy(
 export function pickDelta(
   player: Player,
   pick: PickNumber,
-  format: ScoringFormat,
+  book: RankingBook,
 ): number | null {
-  const rank = player.ranks[format]?.overall;
+  const rank = book.entry(player.id)?.overall;
   return rank === undefined ? null : pick - rank;
 }
 
-/** Players ranked inside the guide's 150 for a format, in that order. */
-export const rankedBoard = (
-  players: readonly Player[],
-  format: ScoringFormat,
-): Player[] =>
+/** Players the active book gives an overall rank, in that order. */
+export const rankedBoard = (players: readonly Player[], book: RankingBook): Player[] =>
   players
-    .filter((player) => player.ranks[format]?.overall !== undefined)
-    .sort(byRank(format));
+    .filter((player) => book.entry(player.id)?.overall !== undefined)
+    .sort(byBook(book));
 
-/** Every player the guide ranks at all in this format. */
-export const inFormat = (
-  players: readonly Player[],
-  format: ScoringFormat,
-): Player[] => players.filter((player) => player.ranks[format] !== undefined);
+/** Every player the active book ranks at all. */
+export const inBook = (players: readonly Player[], book: RankingBook): Player[] =>
+  players.filter((player) => book.entry(player.id) !== undefined);
+
+/** Sorting key, exported for lists that need it without a full comparator. */
+export { rankValue };

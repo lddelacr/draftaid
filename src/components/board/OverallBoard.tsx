@@ -1,7 +1,8 @@
 "use client";
 
 import { Search, Star } from "lucide-react";
-import type { NflTeam, Player, ScoringFormat } from "@/types";
+import type { NflTeam, Player } from "@/types";
+import type { RankingBook } from "@/lib/rankings/book";
 import { cn } from "@/lib/utils";
 import { SENTIMENT_DOT, SENTIMENT_LABEL } from "@/lib/presentation";
 import type { BoardFilters } from "@/hooks/useFilteredPlayers";
@@ -11,7 +12,7 @@ import { Panel, PanelBody, PanelHeader } from "@/components/layout/Panel";
 
 interface OverallBoardProps {
   players: readonly Player[];
-  format: ScoringFormat;
+  book: RankingBook;
   filters: BoardFilters;
   favorites: ReadonlySet<string>;
   /** Current pick, used to show how far a player has slid past his rank. */
@@ -25,7 +26,7 @@ interface OverallBoardProps {
 
 export function OverallBoard({
   players,
-  format,
+  book,
   filters,
   favorites,
   currentPick,
@@ -97,8 +98,8 @@ export function OverallBoard({
             <PlayerRow
               key={player.id}
               player={player}
-              format={format}
-              slide={currentPick - (player.ranks[format]?.overall ?? currentPick)}
+              rank={book.entry(player.id)}
+              slide={currentPick - (book.entry(player.id)?.overall ?? currentPick)}
               signals={stackSignals(player, myTeams)}
               isFavorite={favorites.has(player.id)}
               onDraft={onDraft}
