@@ -1,4 +1,15 @@
-import type { PlayerId, RankingSet, RankingSource, ScoringFormat, Sentiment } from "@/types";
+import {
+  SKILL_POSITIONS,
+  type PlayerId,
+  type PositionalTiers,
+  type RankingSet,
+  type RankingSource,
+  type RankingTier,
+  type ScoringFormat,
+  type Sentiment,
+  type SkillPosition,
+} from "@/types";
+import { emptyPositional, makeTier, newId } from "./sets";
 
 /**
  * Ranking sets persist under their own key, deliberately separate from the
@@ -7,7 +18,7 @@ import type { PlayerId, RankingSet, RankingSource, ScoringFormat, Sentiment } fr
  */
 
 const KEY = "draftaid:rankings:v1";
-const VERSION = 1;
+const VERSION = 2;
 
 export interface RankingStore {
   readonly version: number;
@@ -27,39 +38,79 @@ const FORMATS: readonly ScoringFormat[] = ["ppr", "half"];
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-/**
- * Anything hand-edited, half-written or left by an older build reaches this
- * function, so every field is checked rather than trusted. A set that fails
- * validation is dropped; one bad set does not discard the rest.
- */
-function parseSet(raw: unknown): RankingSet | null {
-  if (!isRecord(raw)) return null;
-  const { id, name, format, createdAt, updatedAt, entries, tierNames } = raw;
+const stringList = (value: unknown): PlayerId[] =>
+  Array.isArray(value) ? (value.filter((id) => typeof id === "string") as PlayerId[]) : [];
 
-  if (typeof id !== "string" || !id) return null;
-  if (typeof name !== "string" || !name) return null;
-  if (!Array.isArray(entries)) return null;
-
-  const parsedEntries = entries.flatMap((entry): RankingSet["entries"][number][] => {
-    if (!isRecord(entry) || typeof entry.playerId !== "string") return [];
-    const tier = Number(entry.tier);
-    const sentiment = SENTIMENTS.includes(entry.sentiment as Sentiment)
-      ? (entry.sentiment as Sentiment)
-      : "neutral";
+function parseTiers(raw: unknown): RankingTier[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((entry): RankingTier[] => {
+    if (!isRecord(entry)) return [];
     return [
       {
-        playerId: entry.playerId as PlayerId,
-        tier: Number.isFinite(tier) && tier > 0 ? Math.floor(tier) : 1,
-        sentiment,
+        id: typeof entry.id === "string" && entry.id ? entry.id : newId("tier"),
+        name: typeof entry.name === "string" && entry.name ? entry.name : "Tier",
+        playerIds: stringList(entry.playerIds),
       },
     ];
   });
+}
 
-  const names: Record<number, string> = {};
-  if (isRecord(tierNames)) {
-    for (const [key, value] of Object.entries(tierNames)) {
-      const tier = Number(key);
-      if (Number.isFinite(tier) && typeof value === "string") names[tier] = value;
+/**
+ * Version 1 stored one flat entry list where array order was overall rank and
+ * a `tier` number rode along on each entry. Reading it forward keeps the order
+ * as the overall list and rebuilds each position's ladder from those numbers,
+ * so a set made before the tier board existed still opens.
+ */
+function migrateV1(raw: Record<string, unknown>): Partial<RankingSet> | null {
+  if (!Array.isArray(raw.entries)) return null;
+
+  const overall: PlayerId[] = [];
+  const designations: Record<string, Sentiment> = {};
+  const tiersByPlayer = new Map<string, number>();
+
+  for (const entry of raw.entries) {
+    if (!isRecord(entry) || typeof entry.playerId !== "string") continue;
+    overall.push(entry.playerId as PlayerId);
+    const tier = Number(entry.tier);
+    tiersByPlayer.set(entry.playerId, Number.isFinite(tier) && tier > 0 ? tier : 1);
+    if (SENTIMENTS.includes(entry.sentiment as Sentiment) && entry.sentiment !== "neutral") {
+      designations[entry.playerId] = entry.sentiment as Sentiment;
+    }
+  }
+
+  // Positions are unknown here (no player data at parse time), so v1 tiers are
+  // rebuilt as a single ladder the editor can redistribute rather than guessed.
+  const positional = emptyPositional() as Record<SkillPosition, RankingTier[]>;
+  for (const position of SKILL_POSITIONS) positional[position] = [makeTier("Tier 1")];
+
+  return { overall, designations, positional };
+}
+
+function parseSet(raw: unknown): RankingSet | null {
+  if (!isRecord(raw)) return null;
+  const { id, name, format, createdAt, updatedAt } = raw;
+
+  if (typeof id !== "string" || !id) return null;
+  if (typeof name !== "string" || !name) return null;
+
+  const legacy = raw.entries !== undefined ? migrateV1(raw) : null;
+
+  const positional = emptyPositional() as Record<SkillPosition, RankingTier[]>;
+  if (isRecord(raw.positional)) {
+    for (const position of SKILL_POSITIONS) {
+      positional[position] = parseTiers(raw.positional[position]);
+    }
+  } else if (legacy?.positional) {
+    for (const position of SKILL_POSITIONS) {
+      positional[position] = [...(legacy.positional[position] ?? [])];
+    }
+  }
+
+  const designations: Record<string, Sentiment> = {};
+  const rawDesignations = isRecord(raw.designations) ? raw.designations : {};
+  for (const [key, value] of Object.entries(rawDesignations)) {
+    if (SENTIMENTS.includes(value as Sentiment) && value !== "neutral") {
+      designations[key] = value as Sentiment;
     }
   }
 
@@ -69,8 +120,9 @@ function parseSet(raw: unknown): RankingSet | null {
     format: FORMATS.includes(format as ScoringFormat) ? (format as ScoringFormat) : "ppr",
     createdAt: Number.isFinite(Number(createdAt)) ? Number(createdAt) : Date.now(),
     updatedAt: Number.isFinite(Number(updatedAt)) ? Number(updatedAt) : Date.now(),
-    entries: parsedEntries,
-    tierNames: names,
+    positional: positional as PositionalTiers,
+    overall: Array.isArray(raw.overall) ? stringList(raw.overall) : (legacy?.overall ?? []),
+    designations: Object.keys(designations).length ? designations : (legacy?.designations ?? {}),
   };
 }
 

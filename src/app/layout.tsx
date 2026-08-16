@@ -11,7 +11,7 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Draftaid",
-  description: "Live fantasy football draft companion built on Joel Smyth's 2026 guide.",
+  description: "Live fantasy football draft companion with custom rankings.",
 };
 
 export const viewport: Viewport = {

@@ -1,5 +1,5 @@
 """
-parse_guide.py — extracts Joel Smyth's Draft Guide 2026 into structured JSON.
+parse_guide.py — extracts the source draft guide PDF into structured JSON.
 
 The guide's rankings live in the PDF text layer, so extraction is exact rather
 than OCR'd. Sentiment (Target / I'll Pass / Avoiding) is encoded only as glyph

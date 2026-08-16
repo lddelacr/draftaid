@@ -76,7 +76,7 @@ export function RankingsMenu({
             <Row
               key={format}
               label={`Default Guide (${FORMAT_LABELS[format]})`}
-              hint="Joel Smyth 2026"
+              hint="Built-in rankings"
               selected={active.kind === "default" && active.format === format}
               onSelect={() => {
                 onActivate({ kind: "default", format });
@@ -95,7 +95,7 @@ export function RankingsMenu({
               <Row
                 key={set.id}
                 label={set.name}
-                hint={`${set.entries.length} players · ${FORMAT_LABELS[set.format]}`}
+                hint={`${set.overall.length} ranked · ${FORMAT_LABELS[set.format]}`}
                 selected={active.kind === "custom" && active.setId === set.id}
                 onSelect={() => {
                   onActivate({ kind: "custom", setId: set.id });

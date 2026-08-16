@@ -1,8 +1,11 @@
 # Draftaid
 
-A live fantasy football draft companion built on **Joel Smyth's Draft Guide 2026**.
-The guide is the only ranking source — order, tiers and target/pass/avoid marks
-are all read out of the PDF, and nothing in the app reorders them.
+A live fantasy football draft companion.
+
+The built-in rankings are parsed from a source draft-guide PDF — order, tiers
+and target/pass/avoid marks are all read out of the file, and nothing in the app
+reorders them. On top of that you can build your own ranking sets and draft off
+those instead.
 
 ## Run it
 
@@ -11,7 +14,8 @@ npm install
 npm run dev
 ```
 
-Next.js 14 · React 18 · TypeScript (strict) · Tailwind · Framer Motion · Lucide.
+Next.js 14 · React 18 · TypeScript (strict) · Tailwind · Framer Motion · Lucide ·
+dnd-kit (drag and drop in the rankings editor).
 `components.json` is configured, so `npx shadcn@latest add <component>` works.
 
 ## Rebuild the data
@@ -74,30 +78,47 @@ The app is entirely client-side, so it can ship either way:
 
 The board evaluates against an active **ranking book**. Two kinds exist:
 
-- **Default Guide (PPR / Half PPR)** — the built-in data, immutable. There is no
-  writable representation of it anywhere in the app.
-- **Custom sets** — yours, created by cloning a guide board and editing it.
+- **Default Rankings (PPR / Half PPR)** — the built-in data, immutable. There is
+  no writable representation of it anywhere in the app.
+- **Custom sets** — yours, created by cloning a default board and editing it.
 
 Pick one from the rankings menu in the header. Switching is instant and touches
-nothing about the draft: picks, seats, rosters and league settings are stored
-separately and share no code path with rankings.
+nothing about the draft: picks, seats, rosters and league settings live under a
+different storage key and share no code path with rankings.
 
-Everything ranking-derived follows the active book — board order, tiers, tier
-names, target/pass/avoid, vs-rank, value flags, position columns and the command
-palette.
+### Three independent pieces
 
-Scoring format rides on the ranking source rather than being a separate control,
-so the board on screen can never disagree with the format setting.
+A custom set holds three things that deliberately do not control each other:
+
+| | What it is | Where it is edited |
+|---|---|---|
+| **Positional tiers** | How a player rates against others at his own position | Position tabs, tier board |
+| **Overall ranking** | Draft order, 1..N, no tiers | Overall tab |
+| **Designations** | Target / Pass / Avoid | Either tab, on the card |
+
+Moving a QB from tier 1 to tier 3 does **not** change his overall rank, and
+moving him to #2 overall does **not** change his tier. A QB in positional tier 1
+sitting 40th overall is a legitimate opinion the model has to be able to hold.
+
+**Overall ranking is the draft authority.** "Who is the best available player?"
+is answered from the overall list. Positional tiers supply context — tier
+labels, position columns, tier breaks — and never override the explicit order.
 
 ### The editor
 
-Drag a row to move a player; the dropped player adopts the tier they land in.
-Alt+↑ / Alt+↓ nudge by one, and T / P / A toggle a designation on the focused
-row. Scissors starts a new tier at that player; "Merge up" folds a tier into the
-one above. Tiers can be named. Edits save as you make them, with undo.
+Position tabs are a tier board: drag cards between tiers, reorder inside a tier,
+drag to the pool to unrank, drag back to re-rank. Tiers can be added, renamed,
+reordered, emptied and deleted; deleting one returns its players to the pool.
+The Overall tab is a flat drag list where rank is read off list position.
 
-Drag is disabled while a search or position filter is active, since dropping
-into a filtered list has no unambiguous meaning.
+T / P / A buttons on any card set a designation in one click and clear it on a
+second. They are mutually exclusive by construction — one key per player — so
+marking a target as avoid simply overwrites.
+
+Search and the status filter **dim** players rather than removing them, so a
+filtered view can never silently change what a tier contains.
+
+Edits autosave, with undo.
 
 ## My team
 

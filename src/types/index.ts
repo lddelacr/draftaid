@@ -64,27 +64,39 @@ export interface Player {
 /**
  * A user-owned ranking set.
  *
- * Entries reference canonical players by id and never copy player records —
- * name, club and bye always come from PLAYERS. Array order *is* overall rank,
- * so reordering is a splice rather than a renumbering pass, and positional rank
- * is derived from order within a position rather than stored twice.
+ * Three pieces of state that deliberately do not control each other:
+ *
+ *   positional  — how a player is valued against others at his own position
+ *   overall     — the draft order, 1..N, with no tiers in it at all
+ *   designations— target / pass / avoid, independent of both
+ *
+ * A QB in positional tier 1 can sit 40th overall, and moving him between tiers
+ * must not touch his overall rank. Deriving one from the other would collapse
+ * the distinction the user is actually expressing, so they are stored apart and
+ * only ever read together.
+ *
+ * Everything references canonical player ids — no player record is ever copied.
  */
-export interface RankingEntry {
-  readonly playerId: PlayerId;
-  readonly tier: number;
-  readonly sentiment: Sentiment;
+export interface RankingTier {
+  readonly id: string;
+  readonly name: string;
+  readonly playerIds: readonly PlayerId[];
 }
+
+/** One independent tier ladder per position. */
+export type PositionalTiers = Readonly<Record<SkillPosition, readonly RankingTier[]>>;
 
 export interface RankingSet {
   readonly id: string;
   readonly name: string;
-  /** Which guide board a "start from default" clone was taken from. */
+  /** Which guide board a clone was taken from. Metadata only. */
   readonly format: ScoringFormat;
   readonly createdAt: number;
   readonly updatedAt: number;
-  readonly entries: readonly RankingEntry[];
-  /** Optional per-tier labels, keyed by tier number. */
-  readonly tierNames: Readonly<Record<number, string>>;
+  readonly positional: PositionalTiers;
+  /** Draft order, 1..N. Index is rank. */
+  readonly overall: readonly PlayerId[];
+  readonly designations: Readonly<Record<string, Sentiment>>;
 }
 
 /** The built-in guide, or one of the user's sets. */

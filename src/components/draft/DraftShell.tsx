@@ -168,6 +168,7 @@ export function DraftShell() {
           set={editingSet}
           players={PLAYERS}
           canUndo={rankings.canUndo}
+          saving={rankings.saving}
           onChange={(next) => rankings.actions.update(next)}
           onRename={(name) => rankings.actions.rename(editingSet, name)}
           onUndo={rankings.actions.undo}

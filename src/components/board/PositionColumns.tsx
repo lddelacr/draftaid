@@ -79,7 +79,7 @@ export function PositionColumns({
                         // signal on the page, so they stay visible.
                         <div className="flex items-center gap-1.5 px-2 py-0.5">
                           <span className="tnum text-2xs text-dim">
-                            {(tier !== undefined && book.tierName(tier)) || `Tier ${tier}`}
+                            {book.entry(player.id)?.tierName ?? `Tier ${tier}`}
                           </span>
                           <span className="h-px flex-1 bg-line" />
                         </div>

@@ -1,7 +1,7 @@
 import {
+  SKILL_POSITIONS,
   type Player,
   type PlayerId,
-  type Position,
   type RankingSet,
   type RankingSource,
   type ScoringFormat,
@@ -11,23 +11,23 @@ import {
 /**
  * A ranking book answers one question: where does this player stand?
  *
- * Before custom rankings existed, every component read `player.ranks[format]`
- * and `player.sentiment` straight off the canonical record. That works for one
- * immutable source and nothing else. The book is the seam: the built-in guide
- * and a user's own set both resolve to the same shape, so switching sets needs
- * no change anywhere downstream.
+ * Every component reads standings through a book rather than off the canonical
+ * player record, so the built-in guide and a user's own set are interchangeable
+ * and switching between them needs no change downstream.
  *
- * Canonical player data (name, club, bye, position) is never copied into a
- * book — only rank, tier and designation, which are the things a ranking set
- * actually owns.
+ * For a custom set the three answers come from three different places, which is
+ * the point of the model: overall rank from the overall list, tier and
+ * positional rank from that position's tier ladder, designation from its own
+ * map. None is derived from another.
  */
 
 export interface RankedEntry {
-  /** Overall board position. Undefined for players a book leaves unranked. */
+  /** Draft order. Undefined when the book leaves a player off the board. */
   readonly overall?: number;
-  /** Rank within the player's own position, derived from overall order. */
-  readonly position: number;
-  readonly tier: number;
+  /** Rank among players at the same position, from the tier ladder. */
+  readonly position?: number;
+  readonly tier?: number;
+  readonly tierName?: string;
   readonly sentiment: Sentiment;
 }
 
@@ -36,23 +36,19 @@ export interface RankingBook {
   readonly name: string;
   readonly isDefault: boolean;
   readonly format: ScoringFormat;
-  /** Undefined when this book does not rank the player at all. */
+  /** Undefined when this book does not know the player at all. */
   entry(id: PlayerId): RankedEntry | undefined;
-  /** Every player the book ranks, in its own order. */
+  /** Every player the book ranks, in overall order. */
   readonly ordered: readonly Player[];
-  tierName(tier: number): string | undefined;
 }
 
 const DEFAULT_ID = "default";
 
-/** Sorting fallback so unranked players sink below ranked ones. */
+/** Sorting key. Players with no overall rank sink below those that have one. */
 export const rankValue = (entry: RankedEntry | undefined): number =>
-  entry === undefined ? 9999 : (entry.overall ?? 900 + entry.position);
+  entry === undefined ? 9999 : (entry.overall ?? 900 + (entry.position ?? 99));
 
-/**
- * The built-in guide. Reads the canonical records and is never mutated — the
- * default data has no writable representation anywhere in the app.
- */
+/** The built-in guide. Read-only — it has no writable representation anywhere. */
 export function defaultBook(
   players: readonly Player[],
   format: ScoringFormat,
@@ -76,61 +72,76 @@ export function defaultBook(
 
   return {
     id: DEFAULT_ID,
-    name: format === "ppr" ? "Default Guide (PPR)" : "Default Guide (Half PPR)",
+    name: format === "ppr" ? "Default Rankings (PPR)" : "Default Rankings (Half PPR)",
     isDefault: true,
     format,
     entry: (id) => entries.get(id),
     ordered,
-    tierName: () => undefined,
   };
 }
 
 /**
- * A user's set. Array order is overall rank; positional rank is counted off
- * that order so the two can never disagree.
+ * A user's set.
  *
- * Entries naming a player who no longer exists in the dataset are skipped
- * rather than rendered as a hole — a guide update that drops a player should
- * not corrupt a saved set.
+ * A player can appear in the overall list, in a positional tier, in both, or in
+ * neither — each read is independent, and a partial entry is normal rather than
+ * an error. Unknown ids are skipped so a guide update that drops a player
+ * cannot corrupt a saved set.
  */
-export function customBook(
-  set: RankingSet,
-  players: readonly Player[],
-): RankingBook {
+export function customBook(set: RankingSet, players: readonly Player[]): RankingBook {
+  const known = new Set<string>(players.map((player) => player.id));
   const byId = new Map(players.map((player) => [player.id, player]));
-  const entries = new Map<PlayerId, RankedEntry>();
-  const ordered: Player[] = [];
-  const seenAtPosition: Partial<Record<Position, number>> = {};
-  const seen = new Set<PlayerId>();
 
-  let overall = 0;
-  for (const entry of set.entries) {
-    const player = byId.get(entry.playerId);
-    // Skip unknown ids and any duplicate that a bad merge introduced.
-    if (!player || seen.has(entry.playerId)) continue;
-    seen.add(entry.playerId);
-
-    overall += 1;
-    const positionRank = (seenAtPosition[player.position] ?? 0) + 1;
-    seenAtPosition[player.position] = positionRank;
-
-    entries.set(player.id, {
-      overall,
-      position: positionRank,
-      tier: entry.tier,
-      sentiment: entry.sentiment,
-    });
-    ordered.push(player);
+  const overallOf = new Map<string, number>();
+  let rank = 0;
+  for (const id of set.overall) {
+    if (!known.has(id) || overallOf.has(id)) continue;
+    rank += 1;
+    overallOf.set(id, rank);
   }
+
+  // Positional rank counts straight down that position's ladder, so tier order
+  // and rank order are the same thing rather than two facts that can diverge.
+  const tierOf = new Map<string, { tier: number; tierName: string; position: number }>();
+  for (const position of SKILL_POSITIONS) {
+    let counter = 0;
+    (set.positional[position] ?? []).forEach((tier, index) => {
+      for (const id of tier.playerIds) {
+        if (!known.has(id) || tierOf.has(id)) continue;
+        counter += 1;
+        tierOf.set(id, { tier: index + 1, tierName: tier.name, position: counter });
+      }
+    });
+  }
+
+  const entry = (id: PlayerId): RankedEntry | undefined => {
+    const overall = overallOf.get(id);
+    const placed = tierOf.get(id);
+    const sentiment = set.designations[id] ?? "neutral";
+    if (overall === undefined && !placed && sentiment === "neutral") return undefined;
+    return {
+      overall,
+      position: placed?.position,
+      tier: placed?.tier,
+      tierName: placed?.tierName,
+      sentiment,
+    };
+  };
+
+  const ordered = [...overallOf.entries()]
+    .sort(([, a], [, b]) => a - b)
+    .flatMap(([id]) => {
+      const player = byId.get(id as PlayerId);
+      return player ? [player] : [];
+    });
 
   return {
     id: set.id,
     name: set.name,
     isDefault: false,
     format: set.format,
-    entry: (id) => entries.get(id),
+    entry,
     ordered,
-    tierName: (tier) => set.tierNames[tier],
   };
 }
 

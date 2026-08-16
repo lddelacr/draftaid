@@ -32,8 +32,19 @@ export function useRankings(players: readonly Player[] = PLAYERS) {
     setHydrated(true);
   }, []);
 
+  /**
+   * Autosave. The flag exists so the editor can say "Saving…" rather than
+   * making the user hunt for a save button after every drag; the write itself
+   * is synchronous, so it settles on the next frame.
+   */
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
-    if (hydrated) saveRankings(store);
+    if (!hydrated) return;
+    setSaving(true);
+    saveRankings(store);
+    const settle = window.setTimeout(() => setSaving(false), 400);
+    return () => window.clearTimeout(settle);
   }, [store, hydrated]);
 
   const book = useMemo(
@@ -122,6 +133,7 @@ export function useRankings(players: readonly Player[] = PLAYERS) {
     book,
     actions,
     canUndo: undoDepth > 0,
+    saving,
     hydrated,
   };
 }

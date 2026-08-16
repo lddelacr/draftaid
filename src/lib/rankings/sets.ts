@@ -1,38 +1,41 @@
 import {
+  SKILL_POSITIONS,
   type Player,
   type PlayerId,
-  type RankingEntry,
+  type PositionalTiers,
   type RankingSet,
+  type RankingTier,
   type ScoringFormat,
   type Sentiment,
+  type SkillPosition,
 } from "@/types";
 
 /**
  * Pure operations over ranking sets. No React, no storage — every function
- * takes a set and returns a new one, so the editor's undo stack is just an
- * array of past sets and nothing can mutate a set in place.
+ * takes a set and returns a new one, so undo is a stack of past sets and
+ * nothing can be mutated in place.
+ *
+ * Each operation touches exactly one of the three pieces of state. A tier move
+ * never rewrites `overall`, and an overall move never rewrites a tier. That
+ * separation is enforced here rather than left to callers to remember.
  */
 
 const now = () => Date.now();
 
-const touch = (set: RankingSet, entries: readonly RankingEntry[]): RankingSet => ({
+const touch = (set: RankingSet, patch: Partial<RankingSet>): RankingSet => ({
   ...set,
-  entries,
+  ...patch,
   updatedAt: now(),
 });
 
-export const newId = (): string =>
-  `rs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+export const newId = (prefix = "rs"): string =>
+  `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 
-/**
- * Names are how the user tells sets apart, so a collision gets a numeric
- * suffix rather than silently producing two identical entries in the switcher.
- */
+/** Names are how sets are told apart, so collisions get a numeric suffix. */
 export function uniqueName(name: string, existing: readonly RankingSet[]): string {
   const taken = new Set(existing.map((set) => set.name.trim().toLowerCase()));
   const base = name.trim() || "Untitled rankings";
   if (!taken.has(base.toLowerCase())) return base;
-
   for (let suffix = 2; suffix < 500; suffix += 1) {
     const candidate = `${base} ${suffix}`;
     if (!taken.has(candidate.toLowerCase())) return candidate;
@@ -40,27 +43,60 @@ export function uniqueName(name: string, existing: readonly RankingSet[]): strin
   return `${base} ${newId()}`;
 }
 
-/** Clone the guide's order, tiers and marks into a set the user owns. */
+export const emptyPositional = (): PositionalTiers => ({
+  QB: [],
+  RB: [],
+  WR: [],
+  TE: [],
+});
+
+export const makeTier = (name: string, playerIds: readonly PlayerId[] = []): RankingTier => ({
+  id: newId("tier"),
+  name,
+  playerIds,
+});
+
+/* ------------------------------------------------------------------ create */
+
+/**
+ * Clone the guide into a set the user owns: its overall order, its per-position
+ * tier groupings, and its target/pass/avoid marks. Rebuilding 250 players by
+ * hand is nobody's workflow, so this is the default path.
+ */
 export function fromDefault(
   name: string,
   format: ScoringFormat,
   players: readonly Player[],
   existing: readonly RankingSet[],
 ): RankingSet {
-  const entries: RankingEntry[] = players
-    .filter((player) => player.ranks[format] !== undefined)
-    .sort((a, b) => {
-      const left = a.ranks[format];
-      const right = b.ranks[format];
-      const leftRank = left?.overall ?? 900 + (left?.position ?? 99);
-      const rightRank = right?.overall ?? 900 + (right?.position ?? 99);
-      return leftRank - rightRank;
-    })
-    .map((player) => ({
-      playerId: player.id,
-      tier: player.ranks[format]?.tier ?? 1,
-      sentiment: player.sentiment,
-    }));
+  const ranked = players.filter((player) => player.ranks[format] !== undefined);
+
+  const overall = ranked
+    .filter((player) => player.ranks[format]?.overall !== undefined)
+    .sort((a, b) => (a.ranks[format]?.overall ?? 0) - (b.ranks[format]?.overall ?? 0))
+    .map((player) => player.id);
+
+  const positional = emptyPositional() as Record<SkillPosition, RankingTier[]>;
+  for (const position of SKILL_POSITIONS) {
+    const pool = ranked
+      .filter((player) => player.position === position)
+      .sort((a, b) => (a.ranks[format]?.position ?? 0) - (b.ranks[format]?.position ?? 0));
+
+    // The guide's tier numbers can have gaps; renumber to a contiguous ladder.
+    const grouped = new Map<number, PlayerId[]>();
+    for (const player of pool) {
+      const tier = player.ranks[format]?.tier ?? 1;
+      grouped.set(tier, [...(grouped.get(tier) ?? []), player.id]);
+    }
+    positional[position] = [...grouped.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, playerIds], index) => makeTier(`Tier ${index + 1}`, playerIds));
+  }
+
+  const designations: Record<string, Sentiment> = {};
+  for (const player of ranked) {
+    if (player.sentiment !== "neutral") designations[player.id] = player.sentiment;
+  }
 
   return {
     id: newId(),
@@ -68,39 +104,40 @@ export function fromDefault(
     format,
     createdAt: now(),
     updatedAt: now(),
-    entries,
-    tierNames: {},
+    positional,
+    overall,
+    designations,
   };
 }
 
+/** A blank set still gets one empty tier per position, so there is a drop target. */
 export function blank(
   name: string,
   format: ScoringFormat,
   existing: readonly RankingSet[],
 ): RankingSet {
+  const positional = emptyPositional() as Record<SkillPosition, RankingTier[]>;
+  for (const position of SKILL_POSITIONS) positional[position] = [makeTier("Tier 1")];
+
   return {
     id: newId(),
     name: uniqueName(name, existing),
     format,
     createdAt: now(),
     updatedAt: now(),
-    entries: [],
-    tierNames: {},
+    positional,
+    overall: [],
+    designations: {},
   };
 }
 
-export function duplicate(
-  set: RankingSet,
-  existing: readonly RankingSet[],
-): RankingSet {
-  return {
-    ...set,
-    id: newId(),
-    name: uniqueName(`${set.name} copy`, existing),
-    createdAt: now(),
-    updatedAt: now(),
-  };
-}
+export const duplicate = (set: RankingSet, existing: readonly RankingSet[]): RankingSet => ({
+  ...set,
+  id: newId(),
+  name: uniqueName(`${set.name} copy`, existing),
+  createdAt: now(),
+  updatedAt: now(),
+});
 
 export const rename = (
   set: RankingSet,
@@ -112,108 +149,173 @@ export const rename = (
   updatedAt: now(),
 });
 
-/**
- * Move one player to a new index.
- *
- * The dropped player inherits the tier of whoever they land next to, which is
- * what "drag into that tier" means visually — without it, dragging a player
- * into the middle of tier 3 would leave them labelled tier 7.
- */
-export function moveEntry(set: RankingSet, from: number, to: number): RankingSet {
-  const entries = [...set.entries];
-  const moving = entries[from];
-  if (!moving || from === to || to < 0 || to >= entries.length) return set;
+/* ------------------------------------------------- positional tier editing */
 
-  entries.splice(from, 1);
-  entries.splice(to, 0, moving);
+const withTiers = (
+  set: RankingSet,
+  position: SkillPosition,
+  tiers: readonly RankingTier[],
+): RankingSet =>
+  touch(set, { positional: { ...set.positional, [position]: tiers } });
 
-  const neighbour = entries[to - 1] ?? entries[to + 1];
-  const adopted = neighbour ? neighbour.tier : moving.tier;
-  entries[to] = { ...moving, tier: adopted };
+export const tiersFor = (set: RankingSet, position: SkillPosition): readonly RankingTier[] =>
+  set.positional[position] ?? [];
 
-  return touch(set, entries);
+export const addTier = (set: RankingSet, position: SkillPosition): RankingSet =>
+  withTiers(set, position, [
+    ...tiersFor(set, position),
+    makeTier(`Tier ${tiersFor(set, position).length + 1}`),
+  ]);
+
+export const renameTier = (
+  set: RankingSet,
+  position: SkillPosition,
+  tierId: string,
+  name: string,
+): RankingSet =>
+  withTiers(
+    set,
+    position,
+    tiersFor(set, position).map((tier) => (tier.id === tierId ? { ...tier, name } : tier)),
+  );
+
+/** Deleting a tier returns its players to the pool rather than dropping them. */
+export const deleteTier = (
+  set: RankingSet,
+  position: SkillPosition,
+  tierId: string,
+): RankingSet =>
+  withTiers(
+    set,
+    position,
+    tiersFor(set, position).filter((tier) => tier.id !== tierId),
+  );
+
+export const clearTier = (
+  set: RankingSet,
+  position: SkillPosition,
+  tierId: string,
+): RankingSet =>
+  withTiers(
+    set,
+    position,
+    tiersFor(set, position).map((tier) =>
+      tier.id === tierId ? { ...tier, playerIds: [] } : tier,
+    ),
+  );
+
+export function moveTier(
+  set: RankingSet,
+  position: SkillPosition,
+  from: number,
+  to: number,
+): RankingSet {
+  const tiers = [...tiersFor(set, position)];
+  const moving = tiers[from];
+  if (!moving || to < 0 || to >= tiers.length || from === to) return set;
+  tiers.splice(from, 1);
+  tiers.splice(to, 0, moving);
+  return withTiers(set, position, tiers);
 }
 
-/** Nudge by one place, for keyboard reordering. */
-export const nudge = (set: RankingSet, index: number, delta: number): RankingSet =>
-  moveEntry(set, index, index + delta);
+/**
+ * Place a player into a tier at a given index, removing them from wherever
+ * they were. Passing a null tier returns them to the pool.
+ *
+ * This never touches `overall` — a player dragged between tiers keeps his draft
+ * rank, which is the whole point of the two being separate.
+ */
+export function placePlayer(
+  set: RankingSet,
+  position: SkillPosition,
+  playerId: PlayerId,
+  tierId: string | null,
+  index?: number,
+): RankingSet {
+  const stripped = tiersFor(set, position).map((tier) => ({
+    ...tier,
+    playerIds: tier.playerIds.filter((id) => id !== playerId),
+  }));
 
-export function setSentiment(
+  if (tierId === null) return withTiers(set, position, stripped);
+
+  const tiers = stripped.map((tier) => {
+    if (tier.id !== tierId) return tier;
+    const playerIds = [...tier.playerIds];
+    const at = index === undefined ? playerIds.length : Math.max(0, Math.min(index, playerIds.length));
+    playerIds.splice(at, 0, playerId);
+    return { ...tier, playerIds };
+  });
+
+  return withTiers(set, position, tiers);
+}
+
+/** Players at a position that no tier holds yet. */
+export function poolFor(
+  set: RankingSet,
+  position: SkillPosition,
+  players: readonly Player[],
+): Player[] {
+  const placed = new Set<string>(
+    tiersFor(set, position).flatMap((tier) => [...tier.playerIds]),
+  );
+  return players.filter(
+    (player) => player.position === position && !placed.has(player.id),
+  );
+}
+
+/* -------------------------------------------------------- overall ranking */
+
+/**
+ * Move a player to a new overall rank. Everything between shifts by one, and
+ * ranks are read off the array index rather than stored, so they can never
+ * drift out of sequence.
+ *
+ * This never touches positional tiers.
+ */
+export function moveOverall(set: RankingSet, from: number, to: number): RankingSet {
+  const overall = [...set.overall];
+  const moving = overall[from];
+  if (!moving || from === to || to < 0 || to >= overall.length) return set;
+  overall.splice(from, 1);
+  overall.splice(to, 0, moving);
+  return touch(set, { overall });
+}
+
+export function addToOverall(set: RankingSet, playerId: PlayerId, index?: number): RankingSet {
+  if (set.overall.includes(playerId)) return set;
+  const overall = [...set.overall];
+  const at = index === undefined ? overall.length : Math.max(0, Math.min(index, overall.length));
+  overall.splice(at, 0, playerId);
+  return touch(set, { overall });
+}
+
+export const removeFromOverall = (set: RankingSet, playerId: PlayerId): RankingSet =>
+  touch(set, { overall: set.overall.filter((id) => id !== playerId) });
+
+/** Players the dataset has that the overall list does not carry. */
+export const missingFromOverall = (
+  set: RankingSet,
+  players: readonly Player[],
+): Player[] => {
+  const held = new Set<string>(set.overall);
+  return players.filter((player) => !held.has(player.id));
+};
+
+/* ------------------------------------------------------------ designation */
+
+/**
+ * Designations are mutually exclusive by construction — one key per player, so
+ * marking a target as avoid simply overwrites. Setting "neutral" removes the
+ * key rather than storing it, which keeps saved sets small.
+ */
+export function designate(
   set: RankingSet,
   playerId: PlayerId,
   sentiment: Sentiment,
 ): RankingSet {
-  const entries = set.entries.map((entry) =>
-    entry.playerId === playerId ? { ...entry, sentiment } : entry,
-  );
-  return touch(set, entries);
-}
-
-/**
- * Start a new tier at `index`: that player and everyone below them shift down
- * one tier, which keeps tier numbers contiguous and ascending.
- */
-export function splitTierAt(set: RankingSet, index: number): RankingSet {
-  const target = set.entries[index];
-  if (!target || index === 0) return set;
-
-  const entries = set.entries.map((entry, position) =>
-    position >= index ? { ...entry, tier: entry.tier + 1 } : entry,
-  );
-  return touch(set, entries);
-}
-
-/** Merge a tier into the one above it, closing the gap below. */
-export function mergeTierUp(set: RankingSet, tier: number): RankingSet {
-  if (tier <= 1) return set;
-  const entries = set.entries.map((entry) =>
-    entry.tier >= tier ? { ...entry, tier: entry.tier - 1 } : entry,
-  );
-  return touch(set, entries);
-}
-
-export const nameTier = (set: RankingSet, tier: number, label: string): RankingSet => {
-  const tierNames = { ...set.tierNames };
-  if (label.trim()) tierNames[tier] = label.trim();
-  else delete tierNames[tier];
-  return { ...set, tierNames, updatedAt: now() };
-};
-
-/** Add a player a blank set (or a stale one) does not yet carry. */
-export function addPlayer(set: RankingSet, playerId: PlayerId): RankingSet {
-  if (set.entries.some((entry) => entry.playerId === playerId)) return set;
-  const tier = set.entries.at(-1)?.tier ?? 1;
-  return touch(set, [...set.entries, { playerId, tier, sentiment: "neutral" }]);
-}
-
-export const removePlayer = (set: RankingSet, playerId: PlayerId): RankingSet =>
-  touch(
-    set,
-    set.entries.filter((entry) => entry.playerId !== playerId),
-  );
-
-/**
- * Players the dataset has but this set does not — a blank set has all of them,
- * and a set built before a guide update has whatever was added since.
- */
-export const missingFrom = (
-  set: RankingSet,
-  players: readonly Player[],
-): Player[] => {
-  const held = new Set(set.entries.map((entry) => entry.playerId));
-  return players.filter((player) => !held.has(player.id));
-};
-
-/** Renumber tiers to 1..n in order, closing any gaps left by editing. */
-export function normaliseTiers(set: RankingSet): RankingSet {
-  let previous: number | null = null;
-  let next = 0;
-  const entries = set.entries.map((entry) => {
-    if (entry.tier !== previous) {
-      previous = entry.tier;
-      next += 1;
-    }
-    return { ...entry, tier: next };
-  });
-  return touch(set, entries);
+  const designations = { ...set.designations };
+  if (sentiment === "neutral") delete designations[playerId];
+  else designations[playerId] = sentiment;
+  return touch(set, { designations });
 }

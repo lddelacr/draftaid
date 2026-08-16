@@ -1,6 +1,6 @@
 # Data report
 
-Everything the app ranks comes from **Joel Smyth's Draft Guide 2026**. Team and
+The built-in rankings come from the source draft-guide PDF. Team and
 bye week are joined onto that spine from outside sources and carry provenance so
 nothing unverified is presented as fact.
 

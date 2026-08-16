@@ -5,11 +5,11 @@ import { type Player, playerId } from "@/types";
  *   python scripts/parse_guide.py <guide.pdf> extract
  *   python scripts/build_dataset.py extract/guide.json src/lib/data
  *
- * Order, sentiment and tiers all come verbatim from Joel Smyth's Draft Guide
- * 2026 — tiers are the author's own, read from the rules he draws between
- * players on the positional pages. Kickers and defences carry the guide's ADP
- * order and no overall rank. `team` and `byeWeek` are joins onto that spine,
- * and `teamSource` records how far each join can be trusted.
+ * Order, sentiment and tiers all come verbatim from the source draft guide —
+ * tiers are the guide author's own, read from the rules drawn between players
+ * on its positional pages. Kickers and defences carry the guide's ADP order and
+ * no overall rank. `team` and `byeWeek` are joins onto that spine, and
+ * `teamSource` records how far each join can be trusted.
  */
 const ROSTER = [
   { id: "jahmyr-gibbs", name: "Jahmyr Gibbs", position: "RB", sentiment: "target", team: "DET", teamSource: "prior", byeWeek: 6, ranks: { ppr: { overall: 1, position: 1, tier: 1 }, half: { overall: 1, position: 1, tier: 1 } } },
