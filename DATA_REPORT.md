@@ -87,6 +87,28 @@ The guide spells three players two ways across its pages. Aliased to one record:
 
 No other names were ambiguous — nothing needs your verification here.
 
+## Cross-format carry-over
+
+The guide caps each positional list — WR at 60, TE at 32 — and the two boards
+disagree about who takes the final slot. Four players were therefore ranked in
+one format and absent from the other, so switching formats made them disappear
+mid-session:
+
+| Player | Ranked in | Appended to |
+|---|---|---|
+| Tyler Higbee | half-PPR TE32 | PPR TE33 |
+| Adonai Mitchell | half-PPR WR60 | PPR WR61 |
+| Darnell Washington | PPR TE32 | half-PPR TE33 |
+| Khalil Shakir | PPR WR60 | half-PPR WR61 |
+
+Each is appended to the end of his position in the format that omits him, in
+that position's last tier, and carries a `carried: true` flag in the data. They
+get **no overall rank**, so the guide's 150-player board is untouched. This is
+the one place a rank is synthesized rather than read from the PDF.
+
+Both formats now rank all 250 players with contiguous positional ranks and no
+gaps.
+
 ## Kickers and defences
 
 Both are in, in the guide's own ADP order, carrying a positional rank and no

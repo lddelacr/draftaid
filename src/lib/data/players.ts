@@ -8,8 +8,10 @@ import { type Player, playerId } from "@/types";
  * Order, sentiment and tiers all come verbatim from the source draft guide —
  * tiers are the guide author's own, read from the rules drawn between players
  * on its positional pages. Kickers and defences carry the guide's ADP order and
- * no overall rank. `team` and `byeWeek` are joins onto that spine, and
- * `teamSource` records how far each join can be trusted.
+ * no overall rank. A rank marked `carried` was ranked in the other scoring
+ * format only and appended to the end of this one. `team` and `byeWeek` are
+ * joins onto that spine, and `teamSource` records how far each join can be
+ * trusted.
  */
 const ROSTER = [
   { id: "jahmyr-gibbs", name: "Jahmyr Gibbs", position: "RB", sentiment: "target", team: "DET", teamSource: "prior", byeWeek: 6, ranks: { ppr: { overall: 1, position: 1, tier: 1 }, half: { overall: 1, position: 1, tier: 1 } } },
@@ -246,9 +248,10 @@ const ROSTER = [
   { id: "jason-sanders", name: "Jason Sanders", position: "K", sentiment: "neutral", team: "NYJ", teamSource: "guide", byeWeek: 13, ranks: { ppr: { position: 31, tier: 1 }, half: { position: 31, tier: 1 } } },
   { id: "nyj-d-st", name: "NYJ D/ST", position: "DST", sentiment: "neutral", team: "NYJ", teamSource: "guide", byeWeek: 13, ranks: { ppr: { position: 31, tier: 1 }, half: { position: 31, tier: 1 } } },
   { id: "shedeur-sanders", name: "Shedeur Sanders", position: "QB", sentiment: "neutral", team: "CLE", teamSource: "prior", byeWeek: 11, ranks: { ppr: { position: 32, tier: 7 }, half: { position: 32, tier: 7 } } },
-  { id: "darnell-washington", name: "Darnell Washington", position: "TE", sentiment: "neutral", team: "PIT", teamSource: "prior", byeWeek: 9, ranks: { ppr: { position: 32, tier: 8 } } },
+  { id: "darnell-washington", name: "Darnell Washington", position: "TE", sentiment: "neutral", team: "PIT", teamSource: "prior", byeWeek: 9, ranks: { ppr: { position: 32, tier: 8 }, half: { position: 33, tier: 8, carried: true } } },
   { id: "andre-szmyt", name: "Andre Szmyt", position: "K", sentiment: "neutral", team: "CLE", teamSource: "guide", byeWeek: 11, ranks: { ppr: { position: 32, tier: 1 }, half: { position: 32, tier: 1 } } },
   { id: "ari-d-st", name: "ARI D/ST", position: "DST", sentiment: "neutral", team: "ARI", teamSource: "guide", byeWeek: 14, ranks: { ppr: { position: 32, tier: 1 }, half: { position: 32, tier: 1 } } },
+  { id: "tyler-higbee", name: "Tyler Higbee", position: "TE", sentiment: "neutral", team: "LAR", teamSource: "prior", byeWeek: 11, ranks: { ppr: { position: 33, tier: 8, carried: true }, half: { position: 32, tier: 8 } } },
   { id: "jonah-coleman", name: "Jonah Coleman", position: "RB", sentiment: "target", team: "DEN", teamSource: "guide", byeWeek: 10, ranks: { ppr: { position: 53, tier: 11 }, half: { position: 53, tier: 11 } } },
   { id: "brian-robinson-jr", name: "Brian Robinson Jr.", position: "RB", sentiment: "neutral", team: "ATL", teamSource: "news", byeWeek: 11, ranks: { ppr: { position: 54, tier: 11 }, half: { position: 54, tier: 11 } } },
   { id: "emmett-johnson", name: "Emmett Johnson", position: "RB", sentiment: "neutral", team: "KC", teamSource: "guide", byeWeek: 5, ranks: { ppr: { position: 55, tier: 11 }, half: { position: 56, tier: 11 } } },
@@ -259,9 +262,8 @@ const ROSTER = [
   { id: "isaiah-davis", name: "Isaiah Davis", position: "RB", sentiment: "neutral", team: "NYJ", teamSource: "prior", byeWeek: 13, ranks: { ppr: { position: 59, tier: 11 }, half: { position: 55, tier: 11 } } },
   { id: "rashid-shaheed", name: "Rashid Shaheed", position: "WR", sentiment: "neutral", team: "SEA", teamSource: "prior", byeWeek: 11, ranks: { ppr: { position: 59, tier: 11 }, half: { position: 58, tier: 11 } } },
   { id: "ollie-gordon-ii", name: "Ollie Gordon II", position: "RB", sentiment: "neutral", team: "MIA", teamSource: "prior", byeWeek: 6, ranks: { ppr: { position: 60, tier: 11 }, half: { position: 59, tier: 11 } } },
-  { id: "khalil-shakir", name: "Khalil Shakir", position: "WR", sentiment: "avoid", team: "BUF", teamSource: "prior", byeWeek: 7, ranks: { ppr: { position: 60, tier: 11 } } },
-  { id: "adonai-mitchell", name: "Adonai Mitchell", position: "WR", sentiment: "neutral", team: "IND", teamSource: "prior", byeWeek: 13, ranks: { half: { position: 60, tier: 11 } } },
-  { id: "tyler-higbee", name: "Tyler Higbee", position: "TE", sentiment: "neutral", team: "LAR", teamSource: "prior", byeWeek: 11, ranks: { half: { position: 32, tier: 8 } } },
+  { id: "khalil-shakir", name: "Khalil Shakir", position: "WR", sentiment: "avoid", team: "BUF", teamSource: "prior", byeWeek: 7, ranks: { ppr: { position: 60, tier: 11 }, half: { position: 61, tier: 11, carried: true } } },
+  { id: "adonai-mitchell", name: "Adonai Mitchell", position: "WR", sentiment: "neutral", team: "IND", teamSource: "prior", byeWeek: 13, ranks: { ppr: { position: 61, tier: 11, carried: true }, half: { position: 60, tier: 11 } } },
 ] as const;
 
 export const PLAYERS: readonly Player[] = ROSTER.map((row) => ({

@@ -48,6 +48,12 @@ export interface FormatRank {
   readonly position: number;
   /** Derived from drop-offs in overall rank — see scripts/build_dataset.py. */
   readonly tier: number;
+  /**
+   * True when the guide ranked this player in the other scoring format only,
+   * and he was appended to the end of this one so switching formats does not
+   * make him disappear. See scripts/build_dataset.py.
+   */
+  readonly carried?: boolean;
 }
 
 export interface Player {

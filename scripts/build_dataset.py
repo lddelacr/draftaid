@@ -233,6 +233,45 @@ def main() -> None:
         if source in ("unknown",):
             unmapped.append(player["name"])
 
+    # --- Cross-format carry-over -------------------------------------------
+    # The guide caps each positional list (WR 60, TE 32) and the two boards do
+    # not always agree on who takes the final slot, so a handful of players are
+    # ranked in one format and absent from the other. Left alone they vanish
+    # from the board when the format is switched, which reads as a bug rather
+    # than as the guide running out of room. Each is appended to the end of his
+    # position in the format that omits him, in the last tier, and flagged.
+    carried = []
+    for fmt in ("ppr", "half"):
+        other = "half" if fmt == "ppr" else "ppr"
+
+        bounds = {}
+        for player in players.values():
+            ranks = player["ranks"].get(fmt)
+            if not ranks:
+                continue
+            position = player["position"]
+            last = bounds.setdefault(position, {"position": 0, "tier": 1})
+            last["position"] = max(last["position"], ranks["position"])
+            last["tier"] = max(last["tier"], ranks["tier"])
+
+        missing = [
+            player
+            for player in players.values()
+            if fmt not in player["ranks"] and other in player["ranks"]
+        ]
+        missing.sort(key=lambda p: p["ranks"][other]["position"])
+
+        for player in missing:
+            last = bounds.setdefault(player["position"], {"position": 0, "tier": 1})
+            last["position"] += 1
+            player["ranks"][fmt] = {
+                "position": last["position"],
+                "tier": last["tier"],
+                # No overall rank: the guide's 150 is untouched by this.
+                "carried": True,
+            }
+            carried.append(f"{player['name']} -> {fmt} {player['position']}{last['position']}")
+
     # Kickers and defences carry a positional rank from the guide's ADP order
     # and no overall rank, so they stay out of the 150-player board.
     for index, (team, name) in enumerate(KICKERS, start=1):
@@ -279,6 +318,8 @@ def main() -> None:
     print(f"  team source  {dict(sources)}")
     print(f"  tier counts  {tiers}")
     print(f"  sentiment    {dict(Counter(p['sentiment'] for p in ordered))}")
+    if carried:
+        print(f"  carried      {len(carried)}: {'; '.join(carried)}")
     if unmapped:
         print(f"  NEEDS TEAM   {unmapped}")
 
