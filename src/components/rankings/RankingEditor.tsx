@@ -16,7 +16,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Check, Search, Undo2 } from "lucide-react";
+import { Check, Eraser, Search, Undo2 } from "lucide-react";
 import {
   SKILL_POSITIONS,
   type Player,
@@ -68,6 +68,57 @@ interface RankingEditorProps {
   onRename: (name: string) => void;
   onUndo: () => void;
   onClose: () => void;
+}
+
+function ClearAllButton({
+  position,
+  count,
+  onClear,
+}: {
+  position: SkillPosition;
+  count: number;
+  onClear: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <span className="ml-auto flex items-center gap-2 rounded-md border border-avoid/40 bg-avoid/5 px-2 py-1">
+        <span className="text-2xs text-muted">
+          Clear all {count} {position}s from their tiers? They return to the pool.
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            onClear();
+            setConfirming(false);
+          }}
+          className="rounded bg-avoid px-1.5 py-0.5 text-2xs text-white"
+        >
+          Clear all
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="rounded px-1.5 py-0.5 text-2xs text-muted hover:text-body"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={count === 0}
+      onClick={() => setConfirming(true)}
+      title={`Remove every ${position} from its tier`}
+      className="ml-auto flex items-center gap-1 rounded-md border border-line px-2 py-1 text-2xs text-muted transition-colors hover:border-avoid/40 hover:text-avoid disabled:pointer-events-none disabled:opacity-40"
+    >
+      <Eraser className="size-3" /> Clear all
+    </button>
+  );
 }
 
 export function RankingEditor({
@@ -335,6 +386,18 @@ export function RankingEditor({
 
         {filtering && (
           <span className="text-2xs text-dim">Filtering dims players — nothing moves</span>
+        )}
+
+        {/* Destructive, so it sits apart from the normal controls. */}
+        {position && (
+          <ClearAllButton
+            position={position}
+            count={ops.tiersFor(set, position).reduce(
+              (total, tier) => total + tier.playerIds.length,
+              0,
+            )}
+            onClear={() => commitTiers(ops.clearPosition(set, position))}
+          />
         )}
       </nav>
 

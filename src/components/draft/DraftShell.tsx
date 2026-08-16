@@ -155,8 +155,8 @@ export function DraftShell() {
       {creating && (
         <CreateRankingsDialog
           onClose={() => setCreating(false)}
-          onCreate={(name, format, from) => {
-            const set = rankings.actions.create(name, format, from);
+          onCreate={(name, format) => {
+            const set = rankings.actions.create(name, format);
             setCreating(false);
             setEditing(set.id);
           }}

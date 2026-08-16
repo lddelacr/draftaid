@@ -83,48 +83,92 @@ export function defaultBook(
 /**
  * A user's set.
  *
- * A player can appear in the overall list, in a positional tier, in both, or in
- * neither — each read is independent, and a partial entry is normal rather than
- * an error. Unknown ids are skipped so a guide update that drops a player
- * cannot corrupt a saved set.
+ * A set does not model every fact about every player, and pretending otherwise
+ * was the source of a real bug: kickers and defences carry a positional rank
+ * but no overall rank in the source data, and they are deliberately never
+ * tiered. Reading a set that had no opinion about them as "this player does not
+ * exist" erased all 64 from the draft board.
+ *
+ * So a set is a set of *overrides* over the full player universe, not a
+ * replacement for it:
+ *
+ *   overall     — the set's list, and nothing else. Absent means unranked.
+ *   tier        — the set's tier boards, and nothing else. Absent means untiered.
+ *   position    — the tier ladder where a player is tiered; otherwise counted
+ *                 on after the tiered players, in the source data's own order.
+ *   designation — the set's map, defaulting to neutral.
+ *
+ * That keeps one canonical interpretation while letting untiered players —
+ * kickers, defences, anyone dragged back to the pool — keep a sensible place at
+ * their position instead of vanishing.
  */
-export function customBook(set: RankingSet, players: readonly Player[]): RankingBook {
-  const known = new Set<string>(players.map((player) => player.id));
+export function customBook(
+  set: RankingSet,
+  players: readonly Player[],
+  format: ScoringFormat = set.format,
+): RankingBook {
   const byId = new Map(players.map((player) => [player.id, player]));
 
   const overallOf = new Map<string, number>();
   let rank = 0;
   for (const id of set.overall) {
-    if (!known.has(id) || overallOf.has(id)) continue;
+    if (!byId.has(id as PlayerId) || overallOf.has(id)) continue;
     rank += 1;
     overallOf.set(id, rank);
   }
 
-  // Positional rank counts straight down that position's ladder, so tier order
-  // and rank order are the same thing rather than two facts that can diverge.
+  // Tiered players: positional rank counts straight down the ladder, so tier
+  // order and rank order are the same thing rather than two facts that drift.
   const tierOf = new Map<string, { tier: number; tierName: string; position: number }>();
+  const counters: Partial<Record<string, number>> = {};
   for (const position of SKILL_POSITIONS) {
     let counter = 0;
     (set.positional[position] ?? []).forEach((tier, index) => {
       for (const id of tier.playerIds) {
-        if (!known.has(id) || tierOf.has(id)) continue;
+        if (!byId.has(id as PlayerId) || tierOf.has(id)) continue;
         counter += 1;
         tierOf.set(id, { tier: index + 1, tierName: tier.name, position: counter });
       }
     });
+    counters[position] = counter;
+  }
+
+  // Untiered players keep a positional rank, numbered on from the tiered ones
+  // in the source data's order. This is what keeps K/DST — and anyone sitting
+  // in the pool — on the board at their position.
+  const untieredPosition = new Map<string, number>();
+  const guideRank = (player: Player): number =>
+    player.ranks[format]?.overall ?? 900 + (player.ranks[format]?.position ?? 99);
+
+  const untiered = players
+    .filter((player) => !tierOf.has(player.id) && player.ranks[format] !== undefined)
+    .sort((a, b) => {
+      const left = overallOf.get(a.id);
+      const right = overallOf.get(b.id);
+      if (left !== undefined && right !== undefined) return left - right;
+      if (left !== undefined) return -1;
+      if (right !== undefined) return 1;
+      return guideRank(a) - guideRank(b);
+    });
+
+  for (const player of untiered) {
+    const next = (counters[player.position] ?? 0) + 1;
+    counters[player.position] = next;
+    untieredPosition.set(player.id, next);
   }
 
   const entry = (id: PlayerId): RankedEntry | undefined => {
-    const overall = overallOf.get(id);
+    const player = byId.get(id);
+    // Only genuinely unknown players resolve to nothing.
+    if (!player || player.ranks[format] === undefined) return undefined;
+
     const placed = tierOf.get(id);
-    const sentiment = set.designations[id] ?? "neutral";
-    if (overall === undefined && !placed && sentiment === "neutral") return undefined;
     return {
-      overall,
-      position: placed?.position,
+      overall: overallOf.get(id),
+      position: placed?.position ?? untieredPosition.get(id),
       tier: placed?.tier,
       tierName: placed?.tierName,
-      sentiment,
+      sentiment: set.designations[id] ?? "neutral",
     };
   };
 

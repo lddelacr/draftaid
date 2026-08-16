@@ -78,11 +78,9 @@ export function useRankings(players: readonly Player[] = PLAYERS) {
       activate: (active: RankingSource) =>
         setStore((current) => ({ ...current, active })),
 
-      create: (name: string, format: ScoringFormat, from: "default" | "blank") => {
-        const set =
-          from === "default"
-            ? ops.fromDefault(name, format, players, store.sets)
-            : ops.blank(name, format, store.sets);
+      create: (name: string, format: ScoringFormat) => {
+        // Every set is a copy of the guide — see ops.fromDefault.
+        const set = ops.fromDefault(name, format, players, store.sets);
         setStore((current) => ({
           ...current,
           sets: [...current.sets, set],

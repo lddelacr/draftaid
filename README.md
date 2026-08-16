@@ -80,7 +80,9 @@ The board evaluates against an active **ranking book**. Two kinds exist:
 
 - **Default Rankings (PPR / Half PPR)** — the built-in data, immutable. There is
   no writable representation of it anywhere in the app.
-- **Custom sets** — yours, created by cloning a default board and editing it.
+- **Custom sets** — yours. Every one starts as a full copy of a default board:
+  overall order, all four tier ladders, and existing marks. You adjust an
+  existing ranking rather than authoring one from nothing.
 
 Pick one from the rankings menu in the header. Switching is instant and touches
 nothing about the draft: picks, seats, rosters and league settings live under a
@@ -129,6 +131,10 @@ The Overall tab is a flat drag list where rank is read off list position.
 T / P / A buttons on any card set a designation in one click and clear it on a
 second. They are mutually exclusive by construction — one key per player — so
 marking a target as avoid simply overwrites.
+
+**Clear all** empties every tier at the position on screen and returns those
+players to the pool, leaving the tier rows in place and the other three
+positions untouched. It confirms first.
 
 Search and the status filter **dim** players rather than removing them, so a
 filtered view can never silently change what a tier contains.

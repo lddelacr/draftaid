@@ -80,7 +80,8 @@ export function OverallList({
         <div className="min-h-0 flex-1 overflow-y-auto p-1">
           {players.length === 0 ? (
             <p className="px-2 py-10 text-center text-sm text-dim">
-              No overall ranking yet. Add players from the right.
+              Nothing here. Use Rebuild from tiers to fill this list from your
+              positional boards.
             </p>
           ) : (
             <SortableContext

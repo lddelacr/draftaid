@@ -8,20 +8,19 @@ import { cn } from "@/lib/utils";
 import { FORMAT_LABELS } from "@/lib/scoring/formats";
 
 /**
- * Creating a set is two decisions — what to call it and what to start from —
- * so it stays a small dialog rather than a wizard. "Start from the guide" is
- * the default because rebuilding 250 players by hand is nobody's workflow.
+ * Creating a set is one decision — what to call it — plus which board to copy.
+ * There is no blank option: users are adjusting an existing ranking, not
+ * authoring one, so an empty set would only ever be a chore to fill in.
  */
 export function CreateRankingsDialog({
   onCreate,
   onClose,
 }: {
-  onCreate: (name: string, format: ScoringFormat, from: "default" | "blank") => void;
+  onCreate: (name: string, format: ScoringFormat) => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState("My 2026 Rankings");
   const [format, setFormat] = useState<ScoringFormat>("ppr");
-  const [from, setFrom] = useState<"default" | "blank">("default");
 
   return (
     <motion.div
@@ -59,54 +58,45 @@ export function CreateRankingsDialog({
               autoFocus
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && name.trim()) onCreate(name, format, from);
+                if (event.key === "Enter" && name.trim()) onCreate(name, format);
               }}
               className="w-full rounded-md border border-line bg-sunken px-2 py-1.5 text-sm text-body focus:border-accent/40"
             />
           </label>
 
           <div className="space-y-1.5">
-            <span className="text-2xs uppercase tracking-wide text-dim">Start from</span>
-            <Choice
-              selected={from === "default"}
-              onSelect={() => setFrom("default")}
-              title="The default guide"
-              detail="Copies every player, tier and mark into a set you own. Edit from there."
-            />
-            <Choice
-              selected={from === "blank"}
-              onSelect={() => setFrom("blank")}
-              title="Blank"
-              detail="Start with nothing and add players yourself."
-            />
+            <span className="text-2xs uppercase tracking-wide text-dim">Based on</span>
+            <p className="rounded-md border border-line bg-sunken px-2 py-1.5 text-2xs leading-relaxed text-muted">
+              A full copy of the default rankings — overall order, every
+              position&apos;s tiers, and existing target/pass/avoid marks. Edit the
+              copy; the original never changes.
+            </p>
           </div>
 
-          {from === "default" && (
-            <div className="space-y-1.5">
-              <span className="text-2xs uppercase tracking-wide text-dim">Which board</span>
-              <div className="flex gap-1 rounded-lg bg-sunken p-1">
-                {(["ppr", "half"] as ScoringFormat[]).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setFormat(option)}
-                    aria-pressed={format === option}
-                    className={cn(
-                      "flex-1 rounded-md px-2 py-1.5 text-2xs transition-colors",
-                      format === option ? "bg-panel text-body shadow-sm" : "text-muted",
-                    )}
-                  >
-                    {FORMAT_LABELS[option]}
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-1.5">
+            <span className="text-2xs uppercase tracking-wide text-dim">Which board</span>
+            <div className="flex gap-1 rounded-lg bg-sunken p-1">
+              {(["ppr", "half"] as ScoringFormat[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setFormat(option)}
+                  aria-pressed={format === option}
+                  className={cn(
+                    "flex-1 rounded-md px-2 py-1.5 text-2xs transition-colors",
+                    format === option ? "bg-panel text-body shadow-sm" : "text-muted",
+                  )}
+                >
+                  {FORMAT_LABELS[option]}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           <button
             type="button"
             disabled={!name.trim()}
-            onClick={() => onCreate(name, format, from)}
+            onClick={() => onCreate(name, format)}
             className="w-full rounded-md bg-accent py-2 text-2xs font-medium text-accent-ink disabled:opacity-40"
           >
             Create and edit
@@ -114,40 +104,5 @@ export function CreateRankingsDialog({
         </div>
       </motion.div>
     </motion.div>
-  );
-}
-
-function Choice({
-  selected,
-  onSelect,
-  title,
-  detail,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={cn(
-        "flex w-full gap-2 rounded-md border p-2 text-left transition-colors",
-        selected ? "border-accent/50 bg-accent/5" : "border-line hover:border-line-strong",
-      )}
-    >
-      <span
-        className={cn(
-          "mt-0.5 size-3 shrink-0 rounded-full border",
-          selected ? "border-accent bg-accent" : "border-line-strong",
-        )}
-      />
-      <span>
-        <span className="block text-2xs font-medium text-body">{title}</span>
-        <span className="block text-2xs leading-relaxed text-dim">{detail}</span>
-      </span>
-    </button>
   );
 }

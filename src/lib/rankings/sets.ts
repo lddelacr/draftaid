@@ -60,8 +60,11 @@ export const makeTier = (name: string, playerIds: readonly PlayerId[] = []): Ran
 
 /**
  * Clone the guide into a set the user owns: its overall order, its per-position
- * tier groupings, and its target/pass/avoid marks. Rebuilding 250 players by
- * hand is nobody's workflow, so this is the default path.
+ * tier groupings, and its target/pass/avoid marks.
+ *
+ * This is the only way a set is created. Users are not building rankings from
+ * nothing — they are adjusting an existing board — so starting anywhere else
+ * just means recreating 250 players before the first useful edit.
  */
 export function fromDefault(
   name: string,
@@ -108,28 +111,6 @@ export function fromDefault(
     overall,
     generatedOverall: overall,
     designations,
-  };
-}
-
-/** A blank set still gets one empty tier per position, so there is a drop target. */
-export function blank(
-  name: string,
-  format: ScoringFormat,
-  existing: readonly RankingSet[],
-): RankingSet {
-  const positional = emptyPositional() as Record<SkillPosition, RankingTier[]>;
-  for (const position of SKILL_POSITIONS) positional[position] = [makeTier("Tier 1")];
-
-  return {
-    id: newId(),
-    name: uniqueName(name, existing),
-    format,
-    createdAt: now(),
-    updatedAt: now(),
-    positional,
-    overall: [],
-    generatedOverall: [],
-    designations: {},
   };
 }
 
@@ -411,3 +392,17 @@ export function syncOverallIfUntouched(
 ): RankingSet {
   return overallIsHandEdited(set) ? set : rebuildOverall(set, players);
 }
+
+/**
+ * Empty every tier at one position, returning its players to the pool.
+ *
+ * The tier rows survive deliberately: the point is to re-sort a position from
+ * scratch, and deleting the ladder as well would mean rebuilding it first.
+ * Only the position passed in is touched.
+ */
+export const clearPosition = (set: RankingSet, position: SkillPosition): RankingSet =>
+  withTiers(
+    set,
+    position,
+    tiersFor(set, position).map((tier) => ({ ...tier, playerIds: [] })),
+  );
