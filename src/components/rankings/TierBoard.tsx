@@ -105,6 +105,9 @@ function TierRow({
   isFiltered: (player: Player) => boolean;
   filtering: boolean;
 }) {
+  // The droppable is the entire tier row — label rail, padding and card area
+  // alike. Previously it wrapped only the inner card grid, so the rail was dead
+  // space and the highlight failed to fire until the pointer cleared it.
   const { setNodeRef, isOver } = useDroppable({ id: tier.id, data: { containerId: tier.id } });
   const [confirming, setConfirming] = useState(false);
 
@@ -126,9 +129,12 @@ function TierRow({
 
   return (
     <div
+      ref={setNodeRef}
       className={cn(
-        "group/tier flex overflow-hidden rounded-lg border border-line bg-panel transition-colors",
-        isOver && "border-accent ring-1 ring-accent",
+        "group/tier relative flex overflow-hidden rounded-lg border-2 bg-panel transition-colors",
+        isOver
+          ? "border-accent bg-accent/[0.04] ring-2 ring-accent/30"
+          : "border-line",
       )}
     >
       <div className={cn("flex w-28 shrink-0 flex-col justify-between gap-1 p-1.5", railTone)}>
@@ -175,16 +181,19 @@ function TierRow({
 
       <SortableContext items={[...tier.playerIds]} strategy={rectSortingStrategy}>
         <div
-          ref={setNodeRef}
           className={cn(
-            "grid min-h-[3.25rem] flex-1 content-start gap-1 p-1.5",
+            "grid min-h-[3.5rem] flex-1 content-start gap-1 p-1.5",
             "grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]",
-            isOver && "bg-accent/5",
           )}
         >
           {players.length === 0 ? (
-            <p className="col-span-full self-center text-center text-2xs text-dim">
-              Drag players here
+            <p
+              className={cn(
+                "col-span-full self-center rounded-md border border-dashed py-3 text-center text-2xs transition-colors",
+                isOver ? "border-accent text-accent" : "border-line text-dim",
+              )}
+            >
+              {isOver ? "Drop here" : "Drag players here"}
             </p>
           ) : (
             players.map((player) => (
@@ -203,6 +212,12 @@ function TierRow({
           )}
         </div>
       </SortableContext>
+
+      {isOver && players.length > 0 && (
+        <span className="pointer-events-none absolute right-2 top-1.5 rounded bg-accent px-1.5 py-px text-2xs font-medium text-accent-ink">
+          Drop into {tier.name}
+        </span>
+      )}
     </div>
   );
 }
@@ -260,8 +275,8 @@ export function PlayerPool({
         <div
           ref={setNodeRef}
           className={cn(
-            "min-h-0 flex-1 space-y-1 overflow-y-auto p-1.5",
-            isOver && "bg-accent/5 ring-1 ring-inset ring-accent",
+            "min-h-0 flex-1 space-y-1 overflow-y-auto p-1.5 transition-colors",
+            isOver && "bg-accent/[0.06] ring-2 ring-inset ring-accent",
           )}
         >
           {visible.length === 0 ? (

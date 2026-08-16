@@ -4,10 +4,14 @@ import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
-  closestCenter,
+  getFirstCollision,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -85,7 +89,33 @@ export function RankingEditor({
     // A small distance threshold keeps a click on a designation button from
     // registering as a drag.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor),
   );
+
+  /**
+   * Collision detection.
+   *
+   * `closestCenter` compares distances between element centres, which is wrong
+   * for a tier board: a tall tier's centre can be further from the pointer than
+   * the centre of the short tier above it, so releasing inside tier 3 could
+   * drop into tier 2. That was the misplacement bug.
+   *
+   * Pointer containment is the correct test — whichever droppable rectangle the
+   * cursor is literally inside wins, regardless of size or centre distance. The
+   * rect-intersection fallback only covers keyboard dragging, where there is no
+   * pointer to test.
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointerHits = pointerWithin(args);
+    if (pointerHits.length > 0) {
+      // A card sits inside its tier, so both collide. Prefer the card (precise
+      // insertion point) but fall back to the container it belongs to.
+      const cardHit = pointerHits.find((hit) => hit.id !== POOL_ID && playersById.has(String(hit.id)));
+      return cardHit ? [cardHit] : pointerHits;
+    }
+    const intersections = rectIntersection(args);
+    return getFirstCollision(intersections) ? intersections : [];
+  };
 
   const playersById = useMemo(
     () => new Map<string, Player>(players.map((player) => [player.id, player])),
@@ -93,6 +123,18 @@ export function RankingEditor({
   );
 
   const designationOf = (id: string): Sentiment => set.designations[id] ?? "neutral";
+
+  /**
+   * Every tier edit goes through here.
+   *
+   * While the overall list is still exactly what generation produced, tier
+   * changes refresh it automatically — that is what makes "build four short
+   * tier boards, get a 1..N ranking" work without a manual step. The moment the
+   * user reorders the overall list themselves it stops following, and only the
+   * explicit rebuild will replace it.
+   */
+  const commitTiers = (next: RankingSet) =>
+    onChange(ops.syncOverallIfUntouched(next, players));
 
   /** Filters only change what is dimmed — never what a tier contains. */
   const isFiltered = (player: Player): boolean => {
@@ -167,7 +209,7 @@ export function RankingEditor({
     if (!overContainer || !fromContainer) return;
 
     if (overContainer === POOL_ID) {
-      onChange(ops.placePlayer(set, position, activeId as PlayerId, null));
+      commitTiers(ops.placePlayer(set, position, activeId as PlayerId, null));
       return;
     }
 
@@ -179,14 +221,20 @@ export function RankingEditor({
       const to = targetTier.playerIds.indexOf(overId as PlayerId);
       if (from === -1 || to === -1 || from === to) return;
       const reordered = arrayMove([...targetTier.playerIds], from, to);
-      onChange(
-        ops.placePlayer(set, position, activeId as PlayerId, targetTier.id, reordered.indexOf(activeId as PlayerId)),
+      commitTiers(
+        ops.placePlayer(
+          set,
+          position,
+          activeId as PlayerId,
+          targetTier.id,
+          reordered.indexOf(activeId as PlayerId),
+        ),
       );
       return;
     }
 
     const at = targetTier.playerIds.indexOf(overId as PlayerId);
-    onChange(
+    commitTiers(
       ops.placePlayer(
         set,
         position,
@@ -292,7 +340,7 @@ export function RankingEditor({
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={collisionDetection}
         onDragStart={(event: DragStartEvent) =>
           setDragging(playersById.get(String(event.active.id)) ?? null)
         }
@@ -301,7 +349,7 @@ export function RankingEditor({
       >
         <div className="min-h-0 flex-1 overflow-hidden p-2">
           {tab === "overall" ? (
-            <div className="h-full">
+            <div className="h-full min-h-0">
               <OverallList
                 players={overallPlayers}
                 designationOf={designationOf}
@@ -312,25 +360,27 @@ export function RankingEditor({
                 }
                 isFiltered={isFiltered}
                 filtering={filtering}
+                onRebuild={() => onChange(ops.rebuildOverall(set, players))}
+                handEdited={ops.overallIsHandEdited(set)}
                 unranked={notRanked}
                 onAdd={(playerId) => onChange(ops.addToOverall(set, playerId as PlayerId))}
               />
             </div>
           ) : (
             position && (
-              <div className="grid h-full min-h-0 gap-2 lg:grid-cols-[minmax(0,1fr)_15rem]">
-                <div className="min-h-0 overflow-y-auto pr-1">
+              <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_15rem]">
+                <div className="min-h-0 overflow-y-auto pb-2 pr-1">
                   <TierBoard
                     tiers={ops.tiersFor(set, position)}
                     playersById={playersById}
                     designationOf={designationOf}
-                    onAddTier={() => onChange(ops.addTier(set, position))}
+                    onAddTier={() => commitTiers(ops.addTier(set, position))}
                     onRenameTier={(tierId, name) =>
-                      onChange(ops.renameTier(set, position, tierId, name))
+                      commitTiers(ops.renameTier(set, position, tierId, name))
                     }
-                    onDeleteTier={(tierId) => onChange(ops.deleteTier(set, position, tierId))}
-                    onClearTier={(tierId) => onChange(ops.clearTier(set, position, tierId))}
-                    onMoveTier={(from, to) => onChange(ops.moveTier(set, position, from, to))}
+                    onDeleteTier={(tierId) => commitTiers(ops.deleteTier(set, position, tierId))}
+                    onClearTier={(tierId) => commitTiers(ops.clearTier(set, position, tierId))}
+                    onMoveTier={(from, to) => commitTiers(ops.moveTier(set, position, from, to))}
                     onDesignate={designate}
                     isFiltered={isFiltered}
                     filtering={filtering}

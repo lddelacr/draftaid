@@ -104,10 +104,25 @@ sitting 40th overall is a legitimate opinion the model has to be able to hold.
 is answered from the overall list. Positional tiers supply context — tier
 labels, position columns, tier breaks — and never override the explicit order.
 
+### Building an overall ranking from tiers
+
+Tier boards are the fast way in. Sorting four short position lists is quick;
+ranking 150 players by hand is not, so the tier boards generate the overall
+list: every position's tier 1 first, then every position's tier 2, and so on.
+Within one depth the positions run QB, RB, WR, TE, and each tier keeps the order
+you arranged inside it. Players you never tiered are appended in the default
+order — kickers and defences land there too, since they are never tiered.
+
+The generated list is then yours. While it still matches what generation
+produced, further tier edits refresh it automatically. The moment you reorder it
+by hand it stops following, marks itself "edited by hand", and only **Rebuild
+from tiers** will replace it — which asks first.
+
 ### The editor
 
 Position tabs are a tier board: drag cards between tiers, reorder inside a tier,
-drag to the pool to unrank, drag back to re-rank. Tiers can be added, renamed,
+drag to the pool to unrank, drag back to re-rank. The whole tier row is a drop
+target, and the tier under the cursor highlights. Tiers can be added, renamed,
 reordered, emptied and deleted; deleting one returns its players to the pool.
 The Overall tab is a flat drag list where rank is read off list position.
 

@@ -106,6 +106,7 @@ export function fromDefault(
     updatedAt: now(),
     positional,
     overall,
+    generatedOverall: overall,
     designations,
   };
 }
@@ -127,6 +128,7 @@ export function blank(
     updatedAt: now(),
     positional,
     overall: [],
+    generatedOverall: [],
     designations: {},
   };
 }
@@ -318,4 +320,94 @@ export function designate(
   if (sentiment === "neutral") delete designations[playerId];
   else designations[playerId] = sentiment;
   return touch(set, { designations });
+}
+
+/* -------------------------------------------- generating overall from tiers */
+
+/**
+ * Build an overall ranking out of the positional tier boards.
+ *
+ * Reads across positions by tier depth: every position's tier 1 first, then
+ * every position's tier 2, and so on. That is the shape of the judgement the
+ * tier boards actually express — "these are my first-rounders at each spot" —
+ * and it turns four short position lists into a usable 1..N draft order without
+ * the user ranking 150 players by hand.
+ *
+ * Within one depth, positions are taken in QB/RB/WR/TE order and each tier
+ * keeps the order the user arranged inside it.
+ *
+ * Players in no tier are appended afterwards in the default guide's order, so
+ * nobody is silently dropped. Kickers and defences are never tiered, so they
+ * land in that tail with their existing ordering intact.
+ */
+export function generateOverall(
+  set: RankingSet,
+  players: readonly Player[],
+  format: ScoringFormat = set.format,
+): PlayerId[] {
+  const ordered: PlayerId[] = [];
+  const placed = new Set<string>();
+
+  const depth = Math.max(
+    0,
+    ...SKILL_POSITIONS.map((position) => tiersFor(set, position).length),
+  );
+
+  for (let level = 0; level < depth; level += 1) {
+    for (const position of SKILL_POSITIONS) {
+      const tier = tiersFor(set, position)[level];
+      if (!tier) continue;
+      for (const id of tier.playerIds) {
+        if (placed.has(id)) continue;
+        placed.add(id);
+        ordered.push(id);
+      }
+    }
+  }
+
+  // Everyone the tier boards do not cover, in the guide's order. This is where
+  // kickers and defences live, and any skill player left in the pool.
+  const tail = players
+    .filter((player) => !placed.has(player.id))
+    .filter((player) => player.ranks[format] !== undefined)
+    .sort((a, b) => {
+      const left = a.ranks[format];
+      const right = b.ranks[format];
+      return (
+        (left?.overall ?? 900 + (left?.position ?? 99)) -
+        (right?.overall ?? 900 + (right?.position ?? 99))
+      );
+    })
+    .map((player) => player.id);
+
+  return [...ordered, ...tail];
+}
+
+/** True when the user has hand edited the overall list since it was generated. */
+export function overallIsHandEdited(set: RankingSet): boolean {
+  if (set.generatedOverall.length === 0) return set.overall.length > 0;
+  if (set.generatedOverall.length !== set.overall.length) return true;
+  return set.overall.some((id, index) => id !== set.generatedOverall[index]);
+}
+
+/** Replace the overall list from the tier boards and record it as generated. */
+export function rebuildOverall(
+  set: RankingSet,
+  players: readonly Player[],
+): RankingSet {
+  const overall = generateOverall(set, players);
+  return touch(set, { overall, generatedOverall: overall });
+}
+
+/**
+ * Refresh the overall list after a tier edit, but only when doing so cannot
+ * destroy anything: an empty list, or one still identical to what generation
+ * last produced. Once the user has reordered by hand, the list is theirs and
+ * only an explicit rebuild replaces it.
+ */
+export function syncOverallIfUntouched(
+  set: RankingSet,
+  players: readonly Player[],
+): RankingSet {
+  return overallIsHandEdited(set) ? set : rebuildOverall(set, players);
 }

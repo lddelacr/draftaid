@@ -3,7 +3,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { GripVertical, Plus, RefreshCw, X } from "lucide-react";
 import type { Player, Sentiment } from "@/types";
 import { cn } from "@/lib/utils";
 import { POSITION_STYLES } from "@/lib/presentation";
@@ -19,6 +20,10 @@ import { POSITION_STYLES } from "@/lib/presentation";
 
 interface OverallListProps {
   players: readonly Player[];
+  /** Rebuild the list from the tier boards. */
+  onRebuild: () => void;
+  /** True when the list has been hand edited since it was generated. */
+  handEdited: boolean;
   designationOf: (id: string) => Sentiment;
   tierNoteOf: (player: Player) => string | undefined;
   onDesignate: (playerId: string, sentiment: Sentiment) => void;
@@ -38,6 +43,8 @@ const DESIGNATIONS: { value: Sentiment; label: string; tone: string }[] = [
 
 export function OverallList({
   players,
+  onRebuild,
+  handEdited,
   designationOf,
   tierNoteOf,
   onDesignate,
@@ -48,9 +55,22 @@ export function OverallList({
   onAdd,
 }: OverallListProps) {
   return (
-    <div className="grid min-h-0 gap-2 lg:grid-cols-[minmax(0,1fr)_16rem]">
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-        <header className="flex items-center gap-2 border-b border-line px-2.5 py-1.5 text-2xs uppercase tracking-wide text-dim">
+    <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
+        <div className="flex shrink-0 items-center gap-2 border-b border-line px-2.5 py-1.5">
+          <h2 className="text-2xs font-medium uppercase tracking-wide text-muted">
+            Overall ranking
+          </h2>
+          <span className="tnum text-2xs text-dim">{players.length}</span>
+          {handEdited && (
+            <span className="rounded bg-sunken px-1.5 py-px text-2xs text-dim">
+              edited by hand
+            </span>
+          )}
+          <RebuildButton onRebuild={onRebuild} handEdited={handEdited} />
+        </div>
+
+        <header className="flex shrink-0 items-center gap-2 border-b border-line px-2.5 py-1 text-2xs uppercase tracking-wide text-dim">
           <span className="w-8 text-right">#</span>
           <span className="flex-1">Player</span>
           <span className="w-24">Tier context</span>
@@ -84,8 +104,8 @@ export function OverallList({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-        <header className="flex items-center gap-2 border-b border-line px-2.5 py-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
+        <header className="flex shrink-0 items-center gap-2 border-b border-line px-2.5 py-2">
           <h2 className="text-2xs font-medium uppercase tracking-wide text-muted">Not ranked</h2>
           <span className="tnum text-2xs text-dim">{unranked.length}</span>
         </header>
@@ -120,6 +140,57 @@ export function OverallList({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Rebuilding throws away manual ordering, so it confirms once the list has been
+ * hand edited — and goes straight through when it has not, where there is
+ * nothing to lose.
+ */
+function RebuildButton({
+  onRebuild,
+  handEdited,
+}: {
+  onRebuild: () => void;
+  handEdited: boolean;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <span className="ml-auto flex items-center gap-1">
+        <span className="text-2xs text-dim">Replace your manual order?</span>
+        <button
+          type="button"
+          onClick={() => {
+            onRebuild();
+            setConfirming(false);
+          }}
+          className="rounded bg-avoid px-1.5 py-0.5 text-2xs text-white"
+        >
+          Rebuild
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="rounded px-1.5 py-0.5 text-2xs text-muted hover:text-body"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title="Rebuild this list from your positional tiers"
+      onClick={() => (handEdited ? setConfirming(true) : onRebuild())}
+      className="ml-auto flex items-center gap-1 rounded-md border border-line px-2 py-0.5 text-2xs text-muted transition-colors hover:border-accent/40 hover:text-accent"
+    >
+      <RefreshCw className="size-3" /> Rebuild from tiers
+    </button>
   );
 }
 

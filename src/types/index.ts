@@ -96,6 +96,14 @@ export interface RankingSet {
   readonly positional: PositionalTiers;
   /** Draft order, 1..N. Index is rank. */
   readonly overall: readonly PlayerId[];
+  /**
+   * The overall list exactly as the last generation produced it.
+   *
+   * Comparing this against `overall` is how we know whether the user has hand
+   * edited since — which decides whether tier edits may quietly refresh the
+   * list, or whether rebuilding needs to warn first.
+   */
+  readonly generatedOverall: readonly PlayerId[];
   readonly designations: Readonly<Record<string, Sentiment>>;
 }
 

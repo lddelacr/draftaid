@@ -122,6 +122,9 @@ function parseSet(raw: unknown): RankingSet | null {
     updatedAt: Number.isFinite(Number(updatedAt)) ? Number(updatedAt) : Date.now(),
     positional: positional as PositionalTiers,
     overall: Array.isArray(raw.overall) ? stringList(raw.overall) : (legacy?.overall ?? []),
+    generatedOverall: Array.isArray(raw.generatedOverall)
+      ? stringList(raw.generatedOverall)
+      : [],
     designations: Object.keys(designations).length ? designations : (legacy?.designations ?? {}),
   };
 }
