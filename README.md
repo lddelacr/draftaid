@@ -33,7 +33,7 @@ See `DATA_REPORT.md` for provenance.
 
 | Key | Action |
 |---|---|
-| `⌘K` / `/` | Draft by name |
+| `⌘K` / `/` | Draft by name or club |
 | `↑` `↓` `⏎` | Move and commit in the palette |
 | `⌘Z` | Undo last pick |
 | `Esc` | Close palette or settings |

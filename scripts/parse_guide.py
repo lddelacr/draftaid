@@ -25,13 +25,29 @@ from pathlib import Path
 import pdfplumber
 
 # Glyph fill colours used by the guide's legend.
+#
+# The guide has shipped in a dark theme (white body text) and a light one
+# (black body text), each with its own green/yellow/red. Both palettes are
+# listed so a re-run works against either edition rather than silently
+# returning every player as unmarked.
 SENTIMENT_BY_COLOR = {
-    (0.153, 0.733, 0.212): "target",  # green  — "Target"
-    (1.0, 0.902, 0.0): "pass",        # yellow — "I'll Pass"
-    (0.918, 0.22, 0.161): "avoid",    # red    — "Avoiding"
+    # Dark edition
+    (0.153, 0.733, 0.212): "target",
+    (1.0, 0.902, 0.0): "pass",
+    (0.918, 0.22, 0.161): "avoid",
+    # Light edition
+    (0.063, 0.569, 0.114): "target",
+    (0.882, 0.678, 0.004): "pass",
+    (0.761, 0.176, 0.129): "avoid",
 }
-# Colour of the horizontal rules the guide uses to separate tiers.
-TIER_RULE_COLOR = (1.0, 0.851, 0.4)
+# Colours of the horizontal rules the guide uses to separate tiers, across
+# both editions. In the light edition this matches the "I'll Pass" glyph
+# colour, which is harmless — rules are read from `page.lines`, glyphs from
+# `page.extract_words`, so the two never mix.
+TIER_RULE_COLORS = {
+    (1.0, 0.851, 0.4),
+    (0.882, 0.678, 0.004),
+}
 
 POSITIONS = ("QB", "RB", "WR", "TE")
 RANK_RE = re.compile(r"\d{1,3}$")
@@ -101,7 +117,7 @@ def parse_positional(page) -> dict[str, list[dict]]:
         line for line in page.lines
         if abs(line["top"] - line["bottom"]) < 0.5
         and line["stroking_color"]
-        and tuple(round(float(c), 3) for c in line["stroking_color"]) == TIER_RULE_COLOR
+        and tuple(round(float(c), 3) for c in line["stroking_color"]) in TIER_RULE_COLORS
     ]
     # Rules are drawn wider than the text they underline, so match them to a
     # column by midpoint band — the same rule the words are bucketed by.

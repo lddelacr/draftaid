@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { Player } from "@/types";
+import { teamMatches } from "@/lib/data/teams";
 
 export interface BoardFilters {
   readonly query: string;
@@ -14,6 +15,9 @@ export const EMPTY_FILTERS: BoardFilters = { query: "", favoritesOnly: false };
  * Matches on initials and subsequences as well as substrings, so "jsn" finds
  * Jaxon Smith-Njigba and "cmc" finds Christian McCaffrey. During a live draft
  * you type three characters, not a surname.
+ *
+ * Club names count too — a defence stored as "LAR D/ST" is unfindable if you
+ * think of it as the Rams, so city and nickname both resolve.
  */
 export function matches(player: Player, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -21,7 +25,7 @@ export function matches(player: Player, query: string): boolean {
 
   const name = player.name.toLowerCase();
   if (name.includes(needle)) return true;
-  if (player.team?.toLowerCase() === needle) return true;
+  if (teamMatches(player.team, needle)) return true;
 
   const initials = player.name
     .split(/[\s.'-]+/)

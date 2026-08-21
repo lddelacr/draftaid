@@ -10,11 +10,12 @@ Parsed from the PDF text layer, not OCR, and verified on every run.
 
 | Dataset | Result |
 |---|---|
+| Guide edition | Dated 20 August |
 | PPR big board | 150 / 150, no gaps |
 | Half-PPR big board | 150 / 150, no gaps |
 | Positional rankings, PPR | QB 32, RB 60, WR 60, TE 32 |
 | Positional rankings, half-PPR | QB 32, RB 60, WR 60, TE 32 |
-| Unique players | 186 (150 ranked overall + 36 depth-only) |
+| Unique players | 251 (150 ranked overall + depth + 64 K/DST) |
 | Kickers / defences | 32 + 32, from the guide's ADP tables |
 | Sentiment tags | 31 target, 15 pass, 11 avoid, 129 untagged |
 
@@ -34,13 +35,17 @@ inferred from rank gaps.
 
 | | QB | RB | WR | TE |
 |---|---|---|---|---|
-| PPR | 7 | 11 | 11 | 8 |
-| Half | 7 | 11 | 11 | 8 |
+| PPR | 6 | 9 | 11 | 7 |
+| Half | 6 | 9 | 11 | 7 |
 
-PPR running back bands, as drawn: **1-2**, **3-5**, 6-10, 11-14, 15-20, 21-25,
-26-30, 31-36, 37-43, 44-48, 49-60. The two boards differ where you would expect
-them to — half-PPR RB tier 2 is 3-4 rather than 3-5, moving James Cook III down a
-tier.
+PPR running back bands, as drawn: **1-2**, **3-5**, 6-11, 12-18, 19-25, 26-32,
+33-36, 37-44, 45-60. The two boards differ where you would expect them to —
+half-PPR RB tier 2 is 3-4 rather than 3-5.
+
+The guide has shipped in a dark edition and a light one, each with its own
+green/yellow/red and its own tier-rule colour. The parser knows both palettes,
+so a re-run against either returns marks and tiers rather than silently
+reporting every player as unmarked.
 
 **Sentiment** is preserved separately from tiers, as agreed — target / pass /
 avoid render as a badge, tiers as the row banding.
@@ -97,9 +102,11 @@ mid-session:
 | Player | Ranked in | Appended to |
 |---|---|---|
 | Tyler Higbee | half-PPR TE32 | PPR TE33 |
-| Adonai Mitchell | half-PPR WR60 | PPR WR61 |
+| Isaiah Davis | half-PPR RB58 | PPR RB61 |
+| Ollie Gordon II | half-PPR RB60 | PPR RB62 |
 | Darnell Washington | PPR TE32 | half-PPR TE33 |
-| Khalil Shakir | PPR WR60 | half-PPR WR61 |
+| Dylan Sampson | PPR RB57 | half-PPR RB61 |
+| Braelon Allen | PPR RB60 | half-PPR RB62 |
 
 Each is appended to the end of his position in the format that omits him, in
 that position's last tier, and carries a `carried: true` flag in the data. They

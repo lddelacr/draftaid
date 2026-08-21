@@ -44,6 +44,8 @@ ALIASES = {
     "bill croskey-merritt": "Jacory Croskey-Merritt",
     "kenneth gainwell": "Kenny Gainwell",
     "mike washington": "Mike Washington Jr.",
+    "deebo samuel": "Deebo Samuel Sr.",
+    "tyrone tracy jr": "Tyrone Tracy Jr.",
 }
 
 # --- Player -> club --------------------------------------------------------
@@ -98,6 +100,7 @@ TEAMS: dict[str, tuple[str, str]] = {
     "Emmett Johnson": ("KC", "guide"), "Dylan Sampson": ("CLE", "prior"),
     "Mike Washington Jr.": ("LV", "guide"), "Jaydon Blue": ("DAL", "prior"),
     "Isaiah Davis": ("NYJ", "prior"), "Ollie Gordon II": ("MIA", "prior"),
+    "Braelon Allen": ("NYJ", "prior"), "Marshawn Lloyd": ("GB", "prior"),
 
     # Wide receivers
     "Ja'Marr Chase": ("CIN", "guide"), "Puka Nacua": ("LAR", "prior"),
@@ -130,7 +133,7 @@ TEAMS: dict[str, tuple[str, str]] = {
     "KC Concepcion": ("CLE", "guide"), "Travis Hunter": ("JAX", "guide"),
     "Tre Tucker": ("LV", "prior"), "Jalen Coker": ("CAR", "prior"),
     "Rashid Shaheed": ("SEA", "prior"), "Khalil Shakir": ("BUF", "prior"),
-    "Adonai Mitchell": ("IND", "prior"),
+    "Adonai Mitchell": ("IND", "prior"), "Denzel Boston": ("CLE", "guide"),
 
     # Tight ends
     "Brock Bowers": ("LV", "guide"), "Trey McBride": ("ARI", "prior"),
@@ -159,24 +162,24 @@ TEAMS: dict[str, tuple[str, str]] = {
 # are images rather than text, so unlike the boards these were read visually and
 # should be treated as lower confidence.
 KICKERS = [
-    ("DAL", "Brandon Aubrey"), ("HOU", "Ka'imi Fairbairn"), ("LAC", "Cameron Dicker"),
-    ("SEA", "Jason Myers"), ("JAX", "Cam Little"), ("SF", "Eddie Pineiro"),
-    ("BAL", "Tyler Loop"), ("CHI", "Cairo Santos"), ("CIN", "Evan McPherson"),
-    ("NE", "Andres Borregales"), ("DET", "Jake Bates"), ("LAR", "Harrison Mevis"),
-    ("TB", "Chase McLaughlin"), ("PIT", "Chris Boswell"), ("KC", "Harrison Butker"),
-    ("MIN", "Will Reichard"), ("DEN", "Wil Lutz"), ("NO", "Charlie Smyth"),
-    ("PHI", "Jake Elliott"), ("ARI", "Chad Ryland"), ("IND", "Spencer Shrader"),
-    ("CAR", "Ryan Fitzgerald"), ("TEN", "Joey Slye"), ("MIA", "Zane Gonzalez"),
-    ("BUF", "Tyler Bass"), ("ATL", "Nick Folk"), ("LV", "Daniel Carlson"),
-    ("GB", "Trey Smack"), ("NYG", "Ben Sauls"), ("WAS", "Jake Moody"),
+    ("DAL", "Brandon Aubrey"), ("LAC", "Cameron Dicker"), ("SEA", "Jason Myers"),
+    ("HOU", "Ka'imi Fairbairn"), ("JAX", "Cam Little"), ("LAR", "Harrison Mevis"),
+    ("DET", "Jake Bates"), ("BAL", "Tyler Loop"), ("KC", "Harrison Butker"),
+    ("SF", "Eddie Pineiro"), ("PIT", "Chris Boswell"), ("MIN", "Will Reichard"),
+    ("TB", "Chase McLaughlin"), ("CHI", "Cairo Santos"), ("DEN", "Wil Lutz"),
+    ("CIN", "Evan McPherson"), ("PHI", "Jake Elliott"), ("NE", "Andres Borregales"),
+    ("ATL", "Nick Folk"), ("BUF", "Tyler Bass"), ("GB", "Trey Smack"),
+    ("LV", "Matt Gay"), ("IND", "Blake Grupe"), ("NO", "Charlie Smyth"),
+    ("MIA", "Riley Patterson"), ("NYG", "Ben Sauls"), ("ARI", "Chad Ryland"),
+    ("CAR", "Ryan Fitzgerald"), ("TEN", "Joey Slye"), ("WAS", "Drew Stevens"),
     ("NYJ", "Jason Sanders"), ("CLE", "Andre Szmyt"),
 ]
 
 DEFENSES = [
-    "HOU", "LAR", "SEA", "DEN", "NE", "PHI", "JAX", "PIT",
-    "MIN", "LAC", "BAL", "CHI", "CLE", "GB", "BUF", "DET",
-    "NO", "ATL", "KC", "NYG", "SF", "IND", "DAL", "CAR",
-    "TB", "TEN", "CIN", "LV", "WAS", "MIA", "NYJ", "ARI",
+    "HOU", "LAR", "DEN", "SEA", "NE", "PHI", "PIT", "MIN",
+    "JAX", "BAL", "DET", "LAC", "GB", "DAL", "KC", "SF",
+    "BUF", "ATL", "NYG", "CHI", "CLE", "IND", "TB", "NO",
+    "WAS", "CAR", "TEN", "CIN", "LV", "MIA", "ARI", "NYJ",
 ]
 
 
