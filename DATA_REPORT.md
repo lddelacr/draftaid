@@ -10,7 +10,7 @@ Parsed from the PDF text layer, not OCR, and verified on every run.
 
 | Dataset | Result |
 |---|---|
-| Guide edition | Dated 20 August |
+| Guide edition | Dated 30 August |
 | PPR big board | 150 / 150, no gaps |
 | Half-PPR big board | 150 / 150, no gaps |
 | Positional rankings, PPR | QB 32, RB 60, WR 60, TE 32 |
@@ -35,12 +35,13 @@ inferred from rank gaps.
 
 | | QB | RB | WR | TE |
 |---|---|---|---|---|
-| PPR | 6 | 9 | 11 | 7 |
-| Half | 6 | 9 | 11 | 7 |
+| PPR | 6 | 11 | 11 | 7 |
+| Half | 6 | 10 | 12 | 7 |
 
-PPR running back bands, as drawn: **1-2**, **3-5**, 6-11, 12-18, 19-25, 26-32,
-33-36, 37-44, 45-60. The two boards differ where you would expect them to —
-half-PPR RB tier 2 is 3-4 rather than 3-5.
+PPR running back bands, as drawn: **1-2**, **3-5**, 6-11, 12-18, 19-21, 22-24,
+25-28, 29-32, 33-39, 40-46, 47-60. The two boards differ where you would expect
+them to — half-PPR merges a pair of the middle bands, giving 10 tiers to PPR's
+11.
 
 The guide has shipped in a dark edition and a light one, each with its own
 green/yellow/red and its own tier-rule colour. The parser knows both palettes,
@@ -102,11 +103,11 @@ mid-session:
 | Player | Ranked in | Appended to |
 |---|---|---|
 | Tyler Higbee | half-PPR TE32 | PPR TE33 |
-| Isaiah Davis | half-PPR RB58 | PPR RB61 |
-| Ollie Gordon II | half-PPR RB60 | PPR RB62 |
-| Darnell Washington | PPR TE32 | half-PPR TE33 |
+| Isaiah Davis | half-PPR RB57 | PPR RB61 |
+| Jaylen Wright | half-PPR RB60 | PPR RB62 |
+| Darnell Washington | PPR TE31 | half-PPR TE33 |
 | Dylan Sampson | PPR RB57 | half-PPR RB61 |
-| Braelon Allen | PPR RB60 | half-PPR RB62 |
+| Braelon Allen | PPR RB59 | half-PPR RB62 |
 
 Each is appended to the end of his position in the format that omits him, in
 that position's last tier, and carries a `carried: true` flag in the data. They

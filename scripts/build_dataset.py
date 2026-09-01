@@ -46,6 +46,8 @@ ALIASES = {
     "mike washington": "Mike Washington Jr.",
     "deebo samuel": "Deebo Samuel Sr.",
     "tyrone tracy jr": "Tyrone Tracy Jr.",
+    "chris godwin": "Chris Godwin Jr.",
+    "kyle pitts sr": "Kyle Pitts Sr.",
 }
 
 # --- Player -> club --------------------------------------------------------
@@ -101,6 +103,8 @@ TEAMS: dict[str, tuple[str, str]] = {
     "Mike Washington Jr.": ("LV", "guide"), "Jaydon Blue": ("DAL", "prior"),
     "Isaiah Davis": ("NYJ", "prior"), "Ollie Gordon II": ("MIA", "prior"),
     "Braelon Allen": ("NYJ", "prior"), "Marshawn Lloyd": ("GB", "prior"),
+    "Jaylen Wright": ("MIA", "prior"), "Kaelon Black": ("SF", "guide"),
+    "Malik Davis": ("DAL", "prior"),
 
     # Wide receivers
     "Ja'Marr Chase": ("CIN", "guide"), "Puka Nacua": ("LAR", "prior"),
@@ -134,6 +138,7 @@ TEAMS: dict[str, tuple[str, str]] = {
     "Tre Tucker": ("LV", "prior"), "Jalen Coker": ("CAR", "prior"),
     "Rashid Shaheed": ("SEA", "prior"), "Khalil Shakir": ("BUF", "prior"),
     "Adonai Mitchell": ("IND", "prior"), "Denzel Boston": ("CLE", "guide"),
+    "Cyrus Allen": ("KC", "guide"),
 
     # Tight ends
     "Brock Bowers": ("LV", "guide"), "Trey McBride": ("ARI", "prior"),
