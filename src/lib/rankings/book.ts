@@ -1,8 +1,10 @@
+import { EXPERT_LISTS, expertById } from "@/lib/data/experts";
 import {
   SKILL_POSITIONS,
   type Player,
   type PlayerId,
   type RankingSet,
+  type ExpertList,
   type RankingSource,
   type ScoringFormat,
   type Sentiment,
@@ -189,12 +191,137 @@ export function customBook(
   };
 }
 
+/**
+ * A published outside list.
+ *
+ * Overall rank is list position; positional rank is counted down the list at
+ * each position. No tier and no designation — those simply are not part of
+ * what these analysts publish, and the UI shows nothing rather than inventing
+ * a band. Players the list omits fall back to the guide's own order so the
+ * board stays complete.
+ */
+export function expertBook(
+  list: ExpertList,
+  players: readonly Player[],
+  format: ScoringFormat = "ppr",
+): RankingBook {
+  const byId = new Map(players.map((player) => [player.id, player]));
+  const overallOf = new Map<string, number>();
+  const positionOf = new Map<string, number>();
+  const counters: Record<string, number> = {};
+
+  let rank = 0;
+  for (const id of list.order) {
+    const player = byId.get(id);
+    if (!player || overallOf.has(id)) continue;
+    rank += 1;
+    overallOf.set(id, rank);
+    counters[player.position] = (counters[player.position] ?? 0) + 1;
+    positionOf.set(id, counters[player.position] as number);
+  }
+
+  // Anyone the list does not cover keeps a positional slot, numbered on in the
+  // guide's order, so kickers, defences and depth players stay draftable.
+  const rest = players
+    .filter((player) => !overallOf.has(player.id) && player.ranks[format])
+    .sort(
+      (a, b) =>
+        (a.ranks[format]?.overall ?? 900 + (a.ranks[format]?.position ?? 99)) -
+        (b.ranks[format]?.overall ?? 900 + (b.ranks[format]?.position ?? 99)),
+    );
+  for (const player of rest) {
+    counters[player.position] = (counters[player.position] ?? 0) + 1;
+    positionOf.set(player.id, counters[player.position] as number);
+  }
+
+  const ordered = [...overallOf.entries()]
+    .sort(([, a], [, b]) => a - b)
+    .flatMap(([id]) => {
+      const player = byId.get(id as PlayerId);
+      return player ? [player] : [];
+    });
+
+  return {
+    id: `expert:${list.id}`,
+    name: list.name,
+    isDefault: false,
+    format,
+    entry: (id) => {
+      const player = byId.get(id);
+      if (!player || !player.ranks[format]) return undefined;
+      return {
+        overall: overallOf.get(id),
+        position: positionOf.get(id),
+        sentiment: "neutral",
+      };
+    },
+    ordered,
+  };
+}
+
+/**
+ * Consensus: the average of every source that ranks a player.
+ *
+ * Averaging *ranks* rather than scores is the only defensible option here —
+ * the lists publish order, not projections, so there is nothing else to
+ * combine. A player any source leaves out is averaged over the sources that do
+ * rank him rather than being penalised with a placeholder, and the number of
+ * contributing sources is reported so a one-source average is visibly thinner
+ * evidence than a three-source one.
+ */
+export function consensusBook(
+  players: readonly Player[],
+  format: ScoringFormat = "ppr",
+): RankingBook {
+  const guide = defaultBook(players, format);
+  const books = [guide, ...EXPERT_LISTS.map((list) => expertBook(list, players, format))];
+
+  const scored = players
+    .flatMap((player) => {
+      const ranks = books
+        .map((book) => book.entry(player.id)?.overall)
+        .filter((value): value is number => value !== undefined);
+      if (ranks.length === 0) return [];
+      const mean = ranks.reduce((total, value) => total + value, 0) / ranks.length;
+      return [{ player, mean, sources: ranks.length }];
+    })
+    .sort((a, b) => a.mean - b.mean);
+
+  const overallOf = new Map<string, number>();
+  const positionOf = new Map<string, number>();
+  const counters: Record<string, number> = {};
+  scored.forEach((row, index) => {
+    overallOf.set(row.player.id, index + 1);
+    counters[row.player.position] = (counters[row.player.position] ?? 0) + 1;
+    positionOf.set(row.player.id, counters[row.player.position] as number);
+  });
+
+  return {
+    id: "consensus",
+    name: `Consensus (${books.length} sources)`,
+    isDefault: false,
+    format,
+    entry: (id) => {
+      const overall = overallOf.get(id);
+      if (overall === undefined) return undefined;
+      // The guide's own marks carry through; the averaging does not invent any.
+      return { overall, position: positionOf.get(id), sentiment: guide.entry(id)?.sentiment ?? "neutral" };
+    },
+    ordered: scored.map((row) => row.player),
+  };
+}
+
 export function resolveBook(
   source: RankingSource,
   sets: readonly RankingSet[],
   players: readonly Player[],
 ): RankingBook {
   if (source.kind === "default") return defaultBook(players, source.format);
+  if (source.kind === "consensus") return consensusBook(players);
+  if (source.kind === "expert") {
+    const list = expertById(source.expertId);
+    return list ? expertBook(list, players) : defaultBook(players, "ppr");
+  }
   const set = sets.find((candidate) => candidate.id === source.setId);
   // A source pointing at a deleted set falls back rather than blanking the board.
   return set ? customBook(set, players) : defaultBook(players, "ppr");

@@ -60,10 +60,9 @@ avoid render as a badge, tiers as the row banding.
 
 | Source | Count | Meaning |
 |---|---|---|
-| `guide` | 45 | Stated in the PDF (player cards, dynasty list, stat notes) |
-| `stated` | 2 | Confirmed directly (Stefon Diggs → WAS, Deebo Samuel Sr. → SF) |
-| `news` | 20 | Confirmed against 2026 transaction reporting |
-| `prior` | 119 | Carried from the player's 2025 club — **not verified for 2026** |
+| `boone` | 184 | From Justin Boone's top-300, which lists a club for every player |
+| `guide` | 65 | Stated in the PDF (player cards, dynasty list, stat notes) |
+| `prior` | 2 | Carried from 2025 — **not verified for 2026** |
 | `unknown` | 1 | Stefon Diggs |
 
 The `prior` bucket is the honest weak spot. Those 120 are almost certainly right,

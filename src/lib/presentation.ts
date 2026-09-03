@@ -51,6 +51,7 @@ export const SENTIMENT_DOT: Record<Sentiment, string> = {
 
 export const TEAM_SOURCE_NOTE: Record<TeamSource, string | null> = {
   guide: null,
+  boone: null,
   stated: null,
   news: null,
   prior: "Club carried from 2025 — not verified for 2026",

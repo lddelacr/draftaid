@@ -138,6 +138,10 @@ function parseSource(raw: unknown, sets: readonly RankingSet[]): RankingSource {
       ? { kind: "custom", setId: raw.setId }
       : EMPTY_STORE.active;
   }
+  if (raw.kind === "consensus") return { kind: "consensus" };
+  if (raw.kind === "expert" && typeof raw.expertId === "string") {
+    return { kind: "expert", expertId: raw.expertId };
+  }
   if (raw.kind === "default") {
     const format = FORMATS.includes(raw.format as ScoringFormat)
       ? (raw.format as ScoringFormat)

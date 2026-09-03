@@ -14,6 +14,15 @@ npm install
 npm run dev
 ```
 
+To add or refresh an analyst list:
+
+```bash
+python scripts/build_experts.py <slug> "<Name>" <csv> "<note>"
+```
+
+The CSV is `rank,name,tier,position`. Unmatched names are printed rather than
+silently dropped.
+
 Next.js 14 · React 18 · TypeScript (strict) · Tailwind · Framer Motion · Lucide ·
 dnd-kit (drag and drop in the rankings editor).
 `components.json` is configured, so `npx shadcn@latest add <component>` works.
@@ -80,6 +89,13 @@ The board evaluates against an active **ranking book**. Two kinds exist:
 
 - **Default Rankings (PPR / Half PPR)** — the built-in data, immutable. There is
   no writable representation of it anywhere in the app.
+- **Analyst lists** — Boris Chen and Justin Boone, both PPR. Flat orders with no
+  target/pass/avoid, because their authors do not publish those; inventing marks
+  would misrepresent the source.
+- **Consensus** — average rank across every source that ranks a player. A player
+  only some sources cover is averaged over those, not penalised with a
+  placeholder, and the source count appears in the label so thin evidence reads
+  as thin.
 - **Custom sets** — yours. Every one starts as a full copy of a default board:
   overall order, all four tier ladders, and existing marks. You adjust an
   existing ranking rather than authoring one from nothing.

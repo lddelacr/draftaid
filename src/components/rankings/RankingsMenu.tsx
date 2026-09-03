@@ -5,6 +5,7 @@ import { Check, Copy, ListOrdered, Pencil, Plus, Trash2 } from "lucide-react";
 import type { RankingSet, RankingSource, ScoringFormat } from "@/types";
 import { cn } from "@/lib/utils";
 import { FORMAT_LABELS } from "@/lib/scoring/formats";
+import { EXPERT_LISTS } from "@/lib/data/experts";
 
 /**
  * The ranking switcher.
@@ -84,6 +85,29 @@ export function RankingsMenu({
               }}
             />
           ))}
+
+          <Section>Analysts</Section>
+          {EXPERT_LISTS.map((list) => (
+            <Row
+              key={list.id}
+              label={list.name}
+              hint={list.note}
+              selected={active.kind === "expert" && active.expertId === list.id}
+              onSelect={() => {
+                onActivate({ kind: "expert", expertId: list.id });
+                setOpen(false);
+              }}
+            />
+          ))}
+          <Row
+            label="Consensus"
+            hint="Average rank across every source"
+            selected={active.kind === "consensus"}
+            onSelect={() => {
+              onActivate({ kind: "consensus" });
+              setOpen(false);
+            }}
+          />
 
           <Section>My rankings</Section>
           {sets.length === 0 ? (

@@ -32,7 +32,7 @@ export type ScoringFormat = "ppr" | "half";
 export type Sentiment = "target" | "neutral" | "pass" | "avoid";
 
 /** Where a player's NFL club came from, so unverified joins stay visible. */
-export type TeamSource = "guide" | "stated" | "news" | "prior" | "unknown";
+export type TeamSource = "guide" | "boone" | "stated" | "news" | "prior" | "unknown";
 
 export type NflTeam =
   | "ARI" | "ATL" | "BAL" | "BUF" | "CAR" | "CHI" | "CIN" | "CLE"
@@ -113,9 +113,25 @@ export interface RankingSet {
   readonly designations: Readonly<Record<string, Sentiment>>;
 }
 
-/** The built-in guide, or one of the user's sets. */
+/**
+ * A published ranking list from an outside analyst.
+ *
+ * These are flat: an order and nothing else. Their authors do not publish
+ * tiers or target/pass/avoid marks, so a bundled source carries neither rather
+ * than inventing them.
+ */
+export interface ExpertList {
+  readonly id: string;
+  readonly name: string;
+  readonly note: string;
+  readonly order: readonly PlayerId[];
+}
+
+/** What the board is currently evaluating against. */
 export type RankingSource =
   | { readonly kind: "default"; readonly format: ScoringFormat }
+  | { readonly kind: "expert"; readonly expertId: string }
+  | { readonly kind: "consensus" }
   | { readonly kind: "custom"; readonly setId: string };
 
 export interface LineupSlots {
