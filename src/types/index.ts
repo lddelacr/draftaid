@@ -49,6 +49,15 @@ export interface FormatRank {
   /** Derived from drop-offs in overall rank — see scripts/build_dataset.py. */
   readonly tier: number;
   /**
+   * The guide's target / pass / avoid mark *for this scoring format*.
+   *
+   * It genuinely differs between the two boards — a back can be a pass in PPR
+   * and an avoid in half-PPR, because the scoring changes the judgement. Storing
+   * one mark per player collapsed that and showed the wrong colour on whichever
+   * board merged second.
+   */
+  readonly sentiment: Sentiment;
+  /**
    * True when the guide ranked this player in the other scoring format only,
    * and he was appended to the end of this one so switching formats does not
    * make him disappear. See scripts/build_dataset.py.
@@ -60,7 +69,6 @@ export interface Player {
   readonly id: PlayerId;
   readonly name: string;
   readonly position: Position;
-  readonly sentiment: Sentiment;
   readonly team: NflTeam | null;
   readonly teamSource: TeamSource;
   readonly byeWeek: number | null;

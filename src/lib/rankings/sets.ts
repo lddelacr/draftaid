@@ -96,9 +96,11 @@ export function fromDefault(
       .map(([, playerIds], index) => makeTier(`Tier ${index + 1}`, playerIds));
   }
 
+  // Marks are per format, so a clone takes the marks of the board it copies.
   const designations: Record<string, Sentiment> = {};
   for (const player of ranked) {
-    if (player.sentiment !== "neutral") designations[player.id] = player.sentiment;
+    const mark = player.ranks[format]?.sentiment;
+    if (mark && mark !== "neutral") designations[player.id] = mark;
   }
 
   return {

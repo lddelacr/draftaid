@@ -6,16 +6,18 @@ nothing unverified is presented as fact.
 
 ## Extracted from the guide (exact)
 
-Parsed from the PDF text layer, not OCR, and verified on every run.
+Parsed from the PDF text layer, not OCR, and verified on every run. Boards are
+located by their page headings rather than by fixed index, so a trimmed export
+that shifts every page still parses.
 
 | Dataset | Result |
 |---|---|
-| Guide edition | Dated 30 August |
+| Guide edition | Dated 4 September |
 | PPR big board | 150 / 150, no gaps |
 | Half-PPR big board | 150 / 150, no gaps |
 | Positional rankings, PPR | QB 32, RB 60, WR 60, TE 32 |
 | Positional rankings, half-PPR | QB 32, RB 60, WR 60, TE 32 |
-| Unique players | 251 (150 ranked overall + depth + 64 K/DST) |
+| Unique players | 250 (150 ranked overall + depth + 64 K/DST) |
 | Kickers / defences | 32 + 32, from the guide's ADP tables |
 | Sentiment tags | 31 target, 15 pass, 11 avoid, 129 untagged |
 
@@ -36,7 +38,7 @@ inferred from rank gaps.
 | | QB | RB | WR | TE |
 |---|---|---|---|---|
 | PPR | 6 | 11 | 11 | 7 |
-| Half | 6 | 10 | 12 | 7 |
+| Half | 6 | 11 | 12 | 7 |
 
 PPR running back bands, as drawn: **1-2**, **3-5**, 6-11, 12-18, 19-21, 22-24,
 25-28, 29-32, 33-39, 40-46, 47-60. The two boards differ where you would expect
@@ -47,6 +49,13 @@ The guide has shipped in a dark edition and a light one, each with its own
 green/yellow/red and its own tier-rule colour. The parser knows both palettes,
 so a re-run against either returns marks and tiers rather than silently
 reporting every player as unmarked.
+
+**Sentiment is stored per scoring format.** The guide marks 15 players
+differently on its two boards — De'Von Achane is a pass in PPR and an avoid in
+half-PPR; Quinshon Judkins is the reverse — because the scoring changes the
+judgement. Collapsing that to one mark per player showed the wrong colour on
+whichever board merged second. Marks now live inside each format's rank, and
+all 119 marked entries were checked against the source pages.
 
 **Sentiment** is preserved separately from tiers, as agreed — target / pass /
 avoid render as a badge, tiers as the row banding.
@@ -101,12 +110,10 @@ mid-session:
 
 | Player | Ranked in | Appended to |
 |---|---|---|
-| Tyler Higbee | half-PPR TE32 | PPR TE33 |
-| Isaiah Davis | half-PPR RB57 | PPR RB61 |
-| Jaylen Wright | half-PPR RB60 | PPR RB62 |
-| Darnell Washington | PPR TE31 | half-PPR TE33 |
-| Dylan Sampson | PPR RB57 | half-PPR RB61 |
-| Braelon Allen | PPR RB59 | half-PPR RB62 |
+| Tyler Higbee | half-PPR only | PPR TE33 |
+| Isaiah Davis | half-PPR only | PPR RB61 |
+| Darnell Washington | PPR only | half-PPR TE33 |
+| Braelon Allen | PPR only | half-PPR RB61 |
 
 Each is appended to the end of his position in the format that omits him, in
 that position's last tier, and carries a `carried: true` flag in the data. They

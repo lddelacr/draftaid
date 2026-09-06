@@ -64,7 +64,7 @@ export function defaultBook(
       overall: rank.overall,
       position: rank.position,
       tier: rank.tier,
-      sentiment: player.sentiment,
+      sentiment: rank.sentiment,
     });
   }
 

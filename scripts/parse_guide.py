@@ -7,11 +7,9 @@ fill colour, which is why we read `non_stroking_color` per word.
 
 Usage:  python scripts/parse_guide.py <path-to-pdf> [out-dir]
 
-Pages (0-indexed):
-  3  PPR big board (150)
-  4  Positional rankings, PPR      (QB32 / RB60 / WR60 / TE32)
-  5  Half-PPR big board (150)
-  6  Positional rankings, half-PPR (QB32 / RB60 / WR60 / TE32)
+Pages are located by their headings rather than by fixed index, because the
+guide ships in editions with different front matter — a trimmed export moved
+every board four pages earlier, which a hardcoded index reads as garbage.
 """
 
 from __future__ import annotations
@@ -175,16 +173,41 @@ def verify(label: str, board: list[dict], positional: dict[str, list[dict]]) -> 
         print(f"  warn  {label}: {name!r} on big board but absent from position list")
 
 
+def find_pages(pdf) -> dict[str, tuple[int, int]]:
+    """Locate each format's big board and positional page by heading text."""
+    boards: dict[str, int] = {}
+    positional: dict[str, int] = {}
+
+    for index, page in enumerate(pdf.pages):
+        head = " ".join((page.extract_text() or "")[:120].split()).lower()
+        if not head:
+            continue
+        fmt = "half" if "half-ppr" in head or "half ppr" in head else "ppr"
+        if "big board" in head:
+            boards.setdefault(fmt, index)
+        elif "positional rankings" in head:
+            positional.setdefault(fmt, index)
+
+    located = {}
+    for fmt in ("ppr", "half"):
+        if fmt in boards and fmt in positional:
+            located[fmt] = (boards[fmt], positional[fmt])
+        else:
+            raise SystemExit(f"could not locate the {fmt} board and positional pages")
+    return located
+
+
 def main() -> None:
     pdf_path = Path(sys.argv[1] if len(sys.argv) > 1 else "guide.pdf")
     out_dir = Path(sys.argv[2] if len(sys.argv) > 2 else "extract")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    formats = {"ppr": (3, 4), "half": (5, 6)}
     payload = {}
 
     with pdfplumber.open(pdf_path) as pdf:
+        formats = find_pages(pdf)
         for label, (board_page, position_page) in formats.items():
+            print(f"  pages {label}: board {board_page}, positional {position_page}")
             board = parse_big_board(pdf.pages[board_page])
             positional = parse_positional(pdf.pages[position_page])
             verify(label, board, positional)

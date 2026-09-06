@@ -50,6 +50,7 @@ ALIASES = {
     "tyrone tracy jr": "Tyrone Tracy Jr.",
     "chris godwin": "Chris Godwin Jr.",
     "kyle pitts sr": "Kyle Pitts Sr.",
+    "brian robinson jr": "Brian Robinson Jr.",
 }
 
 # --- Player -> club --------------------------------------------------------
@@ -206,33 +207,30 @@ def main() -> None:
 
     players: dict[str, dict] = {}
 
-    def upsert(name: str, position: str, sentiment: str) -> dict:
+    def upsert(name: str, position: str) -> dict:
         name = canonical(name)
-        player = players.setdefault(
+        return players.setdefault(
             name,
-            {
-                "id": slugify(name),
-                "name": name,
-                "position": position,
-                "sentiment": sentiment,
-                "ranks": {},
-            },
+            {"id": slugify(name), "name": name, "position": position, "ranks": {}},
         )
-        # A sentiment stated on the big board wins over a neutral elsewhere.
-        if player["sentiment"] == "neutral" and sentiment != "neutral":
-            player["sentiment"] = sentiment
-        return player
 
     for fmt in ("ppr", "half"):
+        # Sentiment is recorded per format. Within one format the big board and
+        # the positional page always agree, so either may set it.
         for row in guide[fmt]["board"]:
-            player = upsert(row["name"], row["position"], row["sentiment"])
-            player["ranks"].setdefault(fmt, {})["overall"] = row["overallRank"]
+            player = upsert(row["name"], row["position"])
+            ranks = player["ranks"].setdefault(fmt, {})
+            ranks["overall"] = row["overallRank"]
+            if row["sentiment"] != "neutral":
+                ranks["sentiment"] = row["sentiment"]
         for position, group in guide[fmt]["positional"].items():
             for row in group:
-                player = upsert(row["name"], position, row["sentiment"])
+                player = upsert(row["name"], position)
                 ranks = player["ranks"].setdefault(fmt, {})
                 ranks["position"] = row["positionRank"]
                 ranks["tier"] = row["tier"]
+                if row["sentiment"] != "neutral":
+                    ranks["sentiment"] = row["sentiment"]
 
     unmapped = []
     for player in players.values():
@@ -277,6 +275,7 @@ def main() -> None:
             player["ranks"][fmt] = {
                 "position": last["position"],
                 "tier": last["tier"],
+                "sentiment": player["ranks"][other].get("sentiment", "neutral"),
                 # No overall rank: the guide's 150 is untouched by this.
                 "carried": True,
             }
@@ -287,18 +286,24 @@ def main() -> None:
     for index, (team, name) in enumerate(KICKERS, start=1):
         players[name] = {
             "id": slugify(name), "name": name, "position": "K",
-            "sentiment": "neutral", "team": team, "teamSource": "guide",
+            "team": team, "teamSource": "guide",
             "byeWeek": BYE_BY_TEAM.get(team),
-            "ranks": {fmt: {"position": index, "tier": 1} for fmt in ("ppr", "half")},
+            "ranks": {
+                fmt: {"position": index, "tier": 1, "sentiment": "neutral"}
+                for fmt in ("ppr", "half")
+            },
         }
 
     for index, team in enumerate(DEFENSES, start=1):
         name = f"{team} D/ST"
         players[name] = {
             "id": slugify(name), "name": name, "position": "DST",
-            "sentiment": "neutral", "team": team, "teamSource": "guide",
+            "team": team, "teamSource": "guide",
             "byeWeek": BYE_BY_TEAM.get(team),
-            "ranks": {fmt: {"position": index, "tier": 1} for fmt in ("ppr", "half")},
+            "ranks": {
+                fmt: {"position": index, "tier": 1, "sentiment": "neutral"}
+                for fmt in ("ppr", "half")
+            },
         }
 
     ordered = sorted(
@@ -327,7 +332,13 @@ def main() -> None:
     print(f"  players      {len(ordered)}")
     print(f"  team source  {dict(sources)}")
     print(f"  tier counts  {tiers}")
-    print(f"  sentiment    {dict(Counter(p['sentiment'] for p in ordered))}")
+    for fmt in ("ppr", "half"):
+        marks = Counter(
+            p["ranks"][fmt].get("sentiment", "neutral")
+            for p in ordered
+            if fmt in p["ranks"]
+        )
+        print(f"  sentiment {fmt:5} {dict(marks)}")
     if carried:
         print(f"  carried      {len(carried)}: {'; '.join(carried)}")
     if unmapped:
